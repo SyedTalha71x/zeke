@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Oxanium:wght@200..800&family=Syne:wght@400..800&display=swap');
+
+
+
+.hero_h1{
+  font-family: "Syne", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+}
+
+body{
+  background-color: #F9F9F9;
+}
+
+/* .auth-background {
+  position: relative;
+  background-color: #f5f2ef;
+}
+
+.auth-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(45deg, rgba(152, 124, 93, 0.1) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(152, 124, 93, 0.1) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(152, 124, 93, 0.1) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(152, 124, 93, 0.1) 75%),
+    linear-gradient(45deg, rgba(246, 190, 210, 0.1) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(246, 190, 210, 0.1) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(246, 190, 210, 0.1) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(246, 190, 210, 0.1) 75%);
+  background-position: 0 0, 0 15px, 15px -15px, -15px 0px, 15px 0, 15px 15px, 30px -15px, 0px 0px;
+  background-size: 30px 30px;
+  pointer-events: none;
+} */
+
+.card-flip-wrapper {
+  perspective: 1000px;
+}
+
+.card-flip {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.group:hover .card-flip {
+  transform: rotateY(180deg);
+}
+
+
