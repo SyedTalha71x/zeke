@@ -5,7 +5,10 @@ import { Link, useNavigate } from "react-router-dom"
 import Google from "../../public/google.svg"
 import Facebook from "../../public/facebook.svg"  
 import Apple from "../../public/apple.svg"
-import NavbarTitle from '../../public/navbar-title.svg'
+import NavbarTitle from "../../public/navbar-title.svg"
+import axios from "axios" 
+import toast, { Toaster } from "react-hot-toast";
+
 
 export default function AuthForm() {
   const navigate = useNavigate()
@@ -16,6 +19,8 @@ export default function AuthForm() {
     email: "",
     password: "",
   })
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   
   const tabsRef = useRef(null)
   const slideRef = useRef(null)
@@ -55,6 +60,8 @@ export default function AuthForm() {
   const handleTabChange = (newIsLogin) => {
     if (newIsLogin === isLogin || !isTabsReady) return
 
+    setError("")
+
     const buttons = tabsRef.current.children
     const activeButton = buttons[newIsLogin ? 1 : 0]
     const buttonWidth = activeButton.offsetWidth
@@ -82,21 +89,137 @@ export default function AuthForm() {
     })
   }
 
-  const handleSubmit = (e) => {
+  // Password validation
+  const validatePassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return {
+      isValid: 
+        password.length >= minLength && 
+        hasUpperCase && 
+        hasLowerCase && 
+        hasNumber && 
+        hasSpecialChar,
+      message: password.length === 0 ? "" : [
+        password.length < minLength && "At least 8 characters",
+        !hasUpperCase && "At least one uppercase letter",
+        !hasLowerCase && "At least one lowercase letter",
+        !hasNumber && "At least one number",
+        !hasSpecialChar && "At least one special character"
+      ].filter(Boolean).join(", ")
+    };
+  };
+
+  // Password strength indicator
+  const getPasswordStrength = (password) => {
+    if (!password) return { strength: 0, label: "" };
+    
+    const validation = validatePassword(password);
+    
+    if (validation.isValid) {
+      return { strength: 100, label: "Strong" };
+    }
+    
+    // Calculate based on criteria met
+    const criteria = [
+      password.length >= 8,
+      /[A-Z]/.test(password),
+      /[a-z]/.test(password),
+      /\d/.test(password),
+      /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    ];
+    
+    const metCriteria = criteria.filter(Boolean).length;
+    const strengthPercentage = Math.min(Math.floor((metCriteria / 5) * 100), 90);
+    
+    if (strengthPercentage < 30) return { strength: strengthPercentage, label: "Weak" };
+    if (strengthPercentage < 70) return { strength: strengthPercentage, label: "Medium" };
+    return { strength: strengthPercentage, label: "Good" };
+  };
+  
+  // Get strength bar color
+  const getStrengthColor = (strength) => {
+    if (strength < 30) return "bg-red-500";
+    if (strength < 70) return "bg-yellow-500";
+    if (strength < 100) return "bg-blue-500";
+    return "bg-green-500";
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (isLogin) {
-      console.log("Login submitted:", formData)
-      navigate("/") 
-    } else {
-      console.log("Registration submitted:", formData)
-      handleTabChange(true) 
-      setFormData({
-        fullName: "",
-        email: "",
-        password: ""
-      })
+    setError("")
+  
+    // Validate password on signup
+    if (!isLogin) {
+      const validation = validatePassword(formData.password);
+      if (!validation.isValid) {
+        toast.error(`Password requirements: ${validation.message}`);
+        return;
+      }
+    }
+  
+    setLoading(true)
+  
+    try {
+      if (isLogin) {
+        const loginData = {
+          email: formData.email,
+          password: formData.password
+        }
+  
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login`, loginData)
+  
+        if (response.data.data.token) {
+          localStorage.setItem("authToken", response.data.data.token)
+          toast.success('You are logged in successfully!')
+          setTimeout(() => {
+            navigate("/") 
+          }, 2000);
+        }
+      } else {
+        const signupData = {
+          name: formData.fullName,
+          email: formData.email,
+          password: formData.password
+        }
+  
+        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/signup`, signupData)
+        toast.success("Registration successful! Please login.")
+        handleTabChange(true)
+        setFormData({
+          fullName: "",
+          email: formData.email,
+          password: ""
+        })
+      }
+    } catch (err) {
+      console.error("Auth error:", err)
+  
+      if (err.response && err.response.data && err.response.data.data.error) {
+        // Check for invalid credentials error
+        if (err.response.data.data.error === "Invalid email or password") {
+          toast.error("Invalid credentials. Please try again.");
+        } else {
+          setError(err.response.data.data.error);
+          toast.error("Invalid credentials. Please try again.");
+
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+        toast.error("Invalid credentials. Please try again.");
+
+      }
+    } finally {
+      setLoading(false)
     }
   }
+  
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -106,6 +229,8 @@ export default function AuthForm() {
   }
 
   return (
+    <>
+    <Toaster position="top-right" />
     <div className="min-h-screen lg:mt-24 md:mt-16 sm:mt-10 mt-10 flex items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-6 bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-lg">
         <div className="text-center">
@@ -146,6 +271,12 @@ export default function AuthForm() {
         </div>
 
         <div className="form-content">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded-lg text-xs sm:text-sm mb-4">
+              {error}
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             {!isLogin && (
               <div>
@@ -187,23 +318,49 @@ export default function AuthForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 bottom-5 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
               >
-                {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
+                {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 mb-6" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 mb-6" />}
               </button>
-              <div>
-                <Link to={"/forgot-password"} className="text-red-600 flex justify-end items-center mt-1 cursor-pointer text-sm" >Forgot Password? </Link>
-              </div>
-            
+              
+              {isLogin && (
+                <div>
+                  <Link to={"/forgot-password"} className="text-red-600 flex justify-end items-center mt-1 cursor-pointer text-sm">
+                    Forgot Password?
+                  </Link>
+                </div>
+              )}
+              
+              {!isLogin && formData.password && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${getStrengthColor(passwordStrength.strength)}`}
+                        style={{ width: `${passwordStrength.strength}%` }}
+                      ></div>
+                    </div>
+                    <span className="ml-2 text-xs text-gray-600">{passwordStrength.label}</span>
+                  </div>
+                  {passwordStrength.strength < 100 && (
+                    <p className="text-xs text-gray-500">
+                      {validatePassword(formData.password).message}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-         
 
             <div>
               <button
                 type="submit"
-                className="group relative w-full outline-none flex justify-center py-2.5 sm:py-3 cursor-pointer border border-transparent text-xs sm:text-sm font-medium rounded-xl sm:rounded-2xl text-white bg-[#2F456C] hover:bg-[#374b73] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B3B5C]"
+                disabled={loading}
+                className={`group relative w-full outline-none flex justify-center py-2.5 sm:py-3 cursor-pointer border border-transparent text-xs sm:text-sm font-medium rounded-xl sm:rounded-2xl text-white bg-[#2F456C] hover:bg-[#374b73] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B3B5C] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                {isLogin ? "Login" : "Create Account"}
+                {loading ? 
+                  isLogin ? "Logging in..." : "Creating Account..." : 
+                  isLogin ? "Login" : "Create Account"
+                }
               </button>
             </div>
 
@@ -255,5 +412,6 @@ export default function AuthForm() {
         </div>
       </div>
     </div>
+    </>
   )
 }

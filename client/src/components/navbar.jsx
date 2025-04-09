@@ -21,6 +21,8 @@ export default function Navbar() {
   const isStyledAuthPage =
     location.pathname.includes("login-signup") ||
     location.pathname.includes("forgot-password") ||
+    location.pathname.includes("verify-otp") ||
+    location.pathname.includes("reset-password") ||
     location.pathname.includes("card-details-pack") ||
     location.pathname.includes("user-profile") ||
     location.pathname.includes("faqs") ||
@@ -32,7 +34,7 @@ export default function Navbar() {
 
 
   const showLoginSignup =
-    location.pathname.includes("login-signup") || location.pathname.includes("forgot-password") || location.pathname.includes("add-payment-method");
+    location.pathname.includes("login-signup") || location.pathname.includes("forgot-password") || location.pathname.includes("add-payment-method") || location.pathname.includes("verify-otp") || location.pathname.includes("reset-password");
 
     const isSingleCardDetail = location.pathname.includes("card-details-pack") || location.pathname.includes("user-profile") || location.pathname.includes("faqs") || location.pathname.includes("privacy-policy");
 

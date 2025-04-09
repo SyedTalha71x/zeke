@@ -8,6 +8,8 @@ import Hero from "./pages/home";
 import Footer from "./components/footer";
 import Auth from "./authentication/auth";
 import ForgotPassword from "./authentication/forget-password";
+import VerifyOTP from "./authentication/verify-otp";
+import ResetPassword from "./authentication/reset-password";
 import CardDetailsPack from "./pages/single-card";
 import CheckoutPage from "./pages/checkout";
 import FAQPage from "./partials/faqs";
@@ -49,6 +51,9 @@ function AppContent() {
         <Route path="/" element={<Hero />} />
         <Route path="/login-signup" element={<Auth />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/card-details-pack/:id" element={<CardDetailsPack />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/faqs" element={<FAQPage />} />
