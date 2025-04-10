@@ -97,7 +97,7 @@ export default function ResetPassword() {
         otp: formData.otp
       });
       
-      if (response.data.data.success === true) {
+      if (response.data.status === true) {
         toast.success("Password reset successfully!");
         
         localStorage.removeItem("resetOTP");
@@ -106,7 +106,7 @@ export default function ResetPassword() {
           navigate("/login-signup");
         }, 1500);
       } else {
-        toast.error(response.data.error || "Failed to reset password");
+        toast.error(response.data.error.error || "Failed to reset password");
       }
     } catch (error) {
       const errorMessage = error.response?.data?.error || 

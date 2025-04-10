@@ -12,7 +12,7 @@ export default function VerifyOTP() {
 //   const location = useLocation();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(120); 
+  const [timeLeft, setTimeLeft] = useState(300); 
   const [isResending, setIsResending] = useState(false);
   
 
