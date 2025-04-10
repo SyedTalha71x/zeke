@@ -8,7 +8,7 @@ import Apple from "../../public/apple.svg"
 import NavbarTitle from "../../public/navbar-title.svg"
 import axios from "axios" 
 import toast, { Toaster } from "react-hot-toast";
-import { apiUrl } from "../utils/api"
+import { BASE_URL } from "../utils/api"
 
 export default function AuthForm() {
   const navigate = useNavigate()
@@ -21,6 +21,7 @@ export default function AuthForm() {
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  
   
   const tabsRef = useRef(null)
   const slideRef = useRef(null)
@@ -173,7 +174,7 @@ export default function AuthForm() {
           password: formData.password
         }
   
-        const response = await axios.post(`${apiUrl}/login`, loginData)
+        const response = await axios.post(`${BASE_URL}/login`, loginData)
   
         if (response.data.data.token) {
           localStorage.setItem("authToken", response.data.data.token)
@@ -189,7 +190,7 @@ export default function AuthForm() {
           password: formData.password
         }
   
-        await axios.post(`${apiUrl}/signup`, signupData)
+        await axios.post(`${BASE_URL}/signup`, signupData)
         toast.success("Registration successful! Please login.")
         handleTabChange(true)
         setFormData({
@@ -199,26 +200,30 @@ export default function AuthForm() {
         })
       }
     } catch (err) {
-      console.error("Auth error:", err)
-  
-      if (err.response && err.response.data && err.response.data.data.error) {
-        // Check for invalid credentials error
-        if (err.response.data.data.error === "Invalid email or password") {
-          toast.error("Invalid credentials. Please try again.");
+      console.error("Auth error:", err);
+    
+      if (err.response && err.response.data && err.response.data.data?.error) {
+        const errorMessage = err.response.data.data.error;
+    
+        if (isLogin) {
+          if (errorMessage === "Invalid email or password") {
+            toast.error("Wrong credentials. Please try again.");
+          } else {
+            toast.error(errorMessage);
+          }
         } else {
-          setError(err.response.data.data.error);
-          toast.error("Invalid credentials. Please try again.");
-
+          // For signup errors
+          toast.error(errorMessage);
         }
+    
+        setError(errorMessage);
       } else {
         setError("An unexpected error occurred. Please try again.");
-        toast.error("Invalid credentials. Please try again.");
-
+        toast.error("An unexpected error occurred. Please try again.");
       }
-    } finally {
-      setLoading(false)
     }
   }
+    
   
 
   const handleChange = (e) => {

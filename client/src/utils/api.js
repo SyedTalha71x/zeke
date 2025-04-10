@@ -1,1 +1,2 @@
-export const apiUrl = import.meta.env.VITE_MODE === 'production' ? import.meta.env.VITE_API_LIVE_URL : import.meta.env.VITE_API_BASE_URL
+// export const BASE_URL= import.meta.env.VITE_API_LIVE_URL
+export const BASE_URL= import.meta.env.VITE_API_BASE_URL;
