@@ -8,7 +8,7 @@ import Apple from "../../public/apple.svg"
 import NavbarTitle from "../../public/navbar-title.svg"
 import axios from "axios" 
 import toast, { Toaster } from "react-hot-toast";
-
+import { apiUrl } from "../utils/api"
 
 export default function AuthForm() {
   const navigate = useNavigate()
@@ -173,7 +173,7 @@ export default function AuthForm() {
           password: formData.password
         }
   
-        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/login`, loginData)
+        const response = await axios.post(`${apiUrl}/login`, loginData)
   
         if (response.data.data.token) {
           localStorage.setItem("authToken", response.data.data.token)
@@ -189,7 +189,7 @@ export default function AuthForm() {
           password: formData.password
         }
   
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/signup`, signupData)
+        await axios.post(`${apiUrl}/signup`, signupData)
         toast.success("Registration successful! Please login.")
         handleTabChange(true)
         setFormData({

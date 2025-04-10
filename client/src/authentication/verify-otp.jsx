@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import NavbarTitle from '../../public/navbar-title.svg';
+import { apiUrl } from "../utils/api";
 
 export default function VerifyOTP() {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ export default function VerifyOTP() {
     
     setIsLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/verify-otp`, { 
+      const response = await axios.post(`${apiUrl}/verify-otp`, { 
         otp: otpValue 
       });
       

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import NavbarTitle from '../../public/navbar-title.svg';
+import { apiUrl } from "../utils/api";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/send-otp`, { email });
+      const response = await axios.post(`${apiUrl}/send-otp`, { email });
       
       if (response.data.message === "OTP sent to email") {
         toast.success("OTP sent to your email!");
