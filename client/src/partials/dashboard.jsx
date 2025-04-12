@@ -1,9 +1,39 @@
 /* eslint-disable no-unused-vars */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BASE_URL } from '../utils/api';
 
 const DashboardHome = () => {
-  const username = "Username here"; 
+  const [username, setUsername] = useState("")
+  // const username = "Username here"; 
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/show-profile`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+
+        const data = await response.json();
+        // console.log(data.data.user.name);
+        setUsername(data.data.user.name);
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to fetch profile');
+        }
+
+      } catch (error) {
+        console.log(error);
+        
+      } 
+    };
+
+    fetchUserProfile();
+  }, []);
   return (
     <>
     <div className='bg-[#FFFFFF] rounded-md shadow-lg p-4'>

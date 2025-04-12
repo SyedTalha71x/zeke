@@ -1,21 +1,23 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import CardsImage from "../../public/cards-image.svg";
 import Tick from "../../public/Vector.svg";
 import gradientTrending from "../../public/TRENDING.svg";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"
+import {BASE_URL} from "../utils/api"
 
-function CardPack({ id, boxCount, cardsAvailable, name, description, price }) {
+function CardPack({ _id, boxCount, cardsAvailable, name, description, price }) {
   const navigate = useNavigate()
 
-  const dynamicRedirect = (id) => {
-    navigate(`/card-details-pack/${id}`)
+  const dynamicRedirect = (_id) => {
+    navigate(`/card-details/${_id}`)
   }
 
   return (
     <div
-      onClick={() => dynamicRedirect(id)}
+      onClick={() => dynamicRedirect(_id)}
       className="bg-[#FFFFFF] rounded-2xl cursor-pointer p-4 flex flex-col group"
     >
       <div className="relative mb-4 p-4 bg-[#F3F3F3] rounded-xl">
@@ -60,62 +62,24 @@ function CardPack({ id, boxCount, cardsAvailable, name, description, price }) {
 
 
 export default function TrendingSection() {
-  const cardPacks = [
-    {
-      id: 1,
-      boxCount: 50,
-      cardsAvailable: 39,
-      name: "Card Pack name here...",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-      price: 1092.0,
-    },
-    {
-      id: 2,
-      boxCount: 50,
-      cardsAvailable: 39,
-      name: "Card Pack name here...",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-      price: 1092.0,
-    },
-    {
-      id: 3,
-      boxCount: 50,
-      cardsAvailable: 39,
-      name: "Card Pack name here...",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-      price: 1092.0,
-    },
-    {
-      id: 4,
-      boxCount: 50,
-      cardsAvailable: 39,
-      name: "Card Pack name here...",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-      price: 1092.0,
-    },
-    {
-      id: 5,
-      boxCount: 50,
-      cardsAvailable: 39,
-      name: "Card Pack name here...",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-      price: 1092.0,
-    },
-    {
-      id: 6,
-      boxCount: 50,
-      cardsAvailable: 39,
-      name: "Card Pack name here...",
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
-      price: 1092.0,
-    },
-  ];
+  const [cardsPack, setcardsPack] = useState([])
+  useEffect(() => {
+    const fetchCardsData = async () =>{
+      try{
+        const response = await axios.get(`${BASE_URL}/get-all-cards`)
+        const data = response.data;
+        console.log(data);
+        
+        setcardsPack(data)
+      }
+      catch(error){
+        console.log("Error while fetching cards data",error);
+      }
+    }
+    fetchCardsData();
+  }, [])
+  
+
 
   return (
     <section className="py-16 px-4 max-w-7xl mx-auto">
@@ -134,7 +98,7 @@ export default function TrendingSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cardPacks.map((pack, index) => (
+        {cardsPack.map((pack, index) => (
           <CardPack key={index} {...pack} />
         ))}
       </div>

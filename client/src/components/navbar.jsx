@@ -23,36 +23,41 @@ export default function Navbar() {
     location.pathname.includes("forgot-password") ||
     location.pathname.includes("verify-otp") ||
     location.pathname.includes("reset-password") ||
-    location.pathname.includes("card-details-pack") ||
+    location.pathname.includes("card-details") ||
     location.pathname.includes("user-profile") ||
     location.pathname.includes("faqs") ||
     location.pathname.includes("privacy-policy") ||
-    location.pathname.includes("add-payment-method");;
-
-
-
-
+    location.pathname.includes("add-payment-method");
 
   const showLoginSignup =
-    location.pathname.includes("login-signup") || location.pathname.includes("forgot-password") || location.pathname.includes("add-payment-method") || location.pathname.includes("verify-otp") || location.pathname.includes("reset-password");
+    location.pathname.includes("login-signup") ||
+    location.pathname.includes("forgot-password") ||
+    location.pathname.includes("add-payment-method") ||
+    location.pathname.includes("verify-otp") ||
+    location.pathname.includes("reset-password");
 
-    const isSingleCardDetail = location.pathname.includes("card-details-pack") || location.pathname.includes("user-profile") || location.pathname.includes("faqs") || location.pathname.includes("privacy-policy");
+  const isSingleCardDetail =
+    location.pathname.includes("card-details") ||
+    location.pathname.includes("user-profile") ||
+    location.pathname.includes("faqs") ||
+    location.pathname.includes("privacy-policy");
 
+  const redirectToDashboard = () => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      navigate("/user-profile/dashboard");
+    } else {
+      navigate("/login-signup");
+    }
+  };
 
-  const redirectToDashboard = () =>{
-    navigate('/user-profile/dashboard');
-  }
+  const redirectToHomePage = () => {
+    navigate("/");
+  };
 
-  const redirectToHomePage = () =>{
-    navigate('/');
-  }
-
-  const redirectToLoginSignup = () =>{
-    navigate('/login-signup');
-  }
-
-
-
+  const redirectToLoginSignup = () => {
+    navigate("/login-signup");
+  };
 
   return (
     <nav
@@ -62,16 +67,32 @@ export default function Navbar() {
     >
       <div className={`max-w-7xl mx-auto ${isStyledAuthPage ? "p-3" : "p-7"}`}>
         <div className="flex justify-between items-center h-16">
-          <div onClick={redirectToHomePage} className="flex items-center cursor-pointer space-x-4">
-            <img src={isStyledAuthPage ? WhiteNavLogo : NavLogo} alt="Navigation Logo" />
+          <div
+            onClick={redirectToHomePage}
+            className="flex items-center cursor-pointer space-x-4"
+          >
+            <img
+              src={isStyledAuthPage ? WhiteNavLogo : NavLogo}
+              alt="Navigation Logo"
+            />
           </div>
           <div>
             {showLoginSignup ? (
-              <button onClick={redirectToLoginSignup} className="inline-flex items-center px-4 py-2 bg-[#2F456C] rounded-2xl text-sm font-medium text-white cursor-pointer">
+              <button
+                onClick={redirectToLoginSignup}
+                className="inline-flex items-center px-4 py-2 bg-[#2F456C] rounded-2xl text-sm font-medium text-white cursor-pointer"
+              >
                 Login/Signup
               </button>
             ) : (
-              <button onClick={redirectToDashboard} className={`inline-flex items-center px-4 py-2 ${isSingleCardDetail ? 'bg-[#2F456C] text-white' : 'bg-[#FFFFFF] text-black'}  rounded-2xl text-sm font-medium text-[#2F456C] cursor-pointer`}>
+              <button
+                onClick={redirectToDashboard}
+                className={`inline-flex items-center px-4 py-2 ${
+                  isSingleCardDetail
+                    ? "bg-[#2F456C] text-white"
+                    : "bg-[#FFFFFF] text-black"
+                } rounded-2xl text-sm font-medium text-[#2F456C] cursor-pointer`}
+              >
                 My Account
               </button>
             )}

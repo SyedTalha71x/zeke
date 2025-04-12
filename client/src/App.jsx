@@ -54,7 +54,7 @@ function AppContent() {
         <Route path="/verify-otp" element={<VerifyOTP />} />
 
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/card-details-pack/:id" element={<CardDetailsPack />} />
+        <Route path="/card-details/:id" element={<CardDetailsPack />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/faqs" element={<FAQPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />

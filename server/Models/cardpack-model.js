@@ -8,7 +8,8 @@ const cardPackSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   boxCount: {
     type: Number,
@@ -18,18 +19,22 @@ const cardPackSchema = new mongoose.Schema({
   cardsAvailable: {
     type: Number,
     required: true,
-    min: 0
+    min: 1
   },
   price: {
     type: Number,
     required: true,
     min: 0
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  imageUrl: {
+    type: String,
+    required: true
   },
-  updatedAt: {
+  isVerified: {
+    type: Boolean,
+    default: true
+  },
+  createdAt: {
     type: Date,
     default: Date.now
   }

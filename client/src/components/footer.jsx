@@ -1,18 +1,34 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Facebook, Instagram } from "lucide-react";
 import NavLogo from "../../public/nav_logo.svg";
 import { Link } from "react-router-dom";
+// import toast, { Toaster } from "react-hot-toast";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Email submitted:", email);
   };
 
+  const handleProtectedRoute = (path) => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      navigate(path);
+    } else {
+      // toast.info("Please login to access this page")
+      navigate("/login-signup");
+    }
+  };
+
   return (
-    <footer className="bg-gradient-to-r from-[#30456C] to-[#536585]  text-white py-12">
+    <>
+     {/* <Toaster position="top-right" /> */}
+    
+    <footer className="bg-gradient-to-r from-[#30456C] to-[#536585] text-white py-12">
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white/10 rounded-xl p-6 mb-12">
           <div className="grid md:grid-cols-2 gap-6 items-center">
@@ -42,14 +58,14 @@ export default function Footer() {
                 </a>
               </div>
             </div>
-            <form onSubmit={handleSubmit} className="">
+            <form onSubmit={handleSubmit}>
               <div className="w-full">
                 <input
                   type="email"
                   placeholder="Enter email address..."
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-4 rounded-3xl  text-sm bg-transparent border border-white/10 text-white placeholder-gray-100 outline-none"
+                  className="w-full px-4 py-4 rounded-3xl text-sm bg-transparent border border-white/10 text-white placeholder-gray-100 outline-none"
                   required
                 />
               </div>
@@ -65,17 +81,23 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row  justify-between items-center mb-12">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-12">
           <Link to={"/"} className="mb-6 md:mb-0">
-            <img src={NavLogo} alt="" />
+            <img src={NavLogo} alt="Logo" />
           </Link>
           <nav className="flex flex-wrap justify-center gap-10">
-            <Link to={"/user-profile/my-orders"} className="text-[#FFFFFF] text-sm hover:text-white">
+            <button
+              onClick={() => handleProtectedRoute("/user-profile/my-orders")}
+              className="text-[#FFFFFF] text-sm hover:text-white"
+            >
               My Orders
-            </Link>
-            <Link to={"/user-profile/dashboard"} className="text-[#FFFFFF] text-sm hover:text-white">
+            </button>
+            <button
+              onClick={() => handleProtectedRoute("/user-profile/dashboard")}
+              className="text-[#FFFFFF] text-sm hover:text-white"
+            >
               My Account
-            </Link>
+            </button>
             <Link to={"/faqs"} className="text-[#FFFFFF] text-sm hover:text-white">
               FAQs
             </Link>
@@ -85,15 +107,16 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="h-[1px] bg-slate-200/20 w-full mb-2 "></div>
+        <div className="h-[1px] bg-slate-200/20 w-full mb-2"></div>
 
         <div className="text-center mt-7 text-[#FFFFFF] text-sm">
           <p className="flex justify-center items-center gap-1">
             Copyright <span className="inline-block">&copy;</span>{" "}
-            <div className="font-bold">Hitsphere</div> . All Rights Reserved
+            <div className="font-bold">Hitsphere</div>. All Rights Reserved
           </p>
         </div>
       </div>
     </footer>
+    </>
   );
 }
