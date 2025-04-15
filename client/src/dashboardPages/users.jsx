@@ -1,70 +1,11 @@
 /* eslint-disable no-unused-vars */
 import React from "react";
 import { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Tag, Typography, Spin, Modal, Form, Select } from "antd";
+import { Table, Input, Button, Space, Tag, Typography, Spin, Modal, Form, Select, message } from "antd";
 import { SearchOutlined, UserOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-
+import { BASE_URL } from "../utils/api";
 const { Title } = Typography;
 const { Option } = Select;
-
-const sampleUsers = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@example.com",
-    role: "Admin",
-    status: "active",
-    lastLogin: "2023-05-15 09:23:11",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    role: "User",
-    status: "active",
-    lastLogin: "2023-05-14 14:45:30",
-  },
-  {
-    id: 3,
-    name: "Robert Johnson",
-    email: "robert.j@example.com",
-    role: "Editor",
-    status: "inactive",
-    lastLogin: "2023-04-28 11:20:45",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    email: "emily.davis@example.com",
-    role: "User",
-    status: "pending",
-    lastLogin: "2023-05-10 16:37:22",
-  },
-  {
-    id: 5,
-    name: "Michael Wilson",
-    email: "michael.w@example.com",
-    role: "User",
-    status: "active",
-    lastLogin: "2023-05-15 08:12:55",
-  },
-  {
-    id: 6,
-    name: "Sarah Brown",
-    email: "sarah.b@example.com",
-    role: "Editor",
-    status: "active",
-    lastLogin: "2023-05-14 19:30:10",
-  },
-  {
-    id: 7,
-    name: "David Miller",
-    email: "david.m@example.com",
-    role: "User",
-    status: "inactive",
-    lastLogin: "2023-05-01 10:15:33",
-  },
-];
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -75,28 +16,39 @@ const Users = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [form] = Form.useForm();
 
-  // Simulate fetching data
   useEffect(() => {
     const fetchUsers = async () => {
-      // In a real app, you would fetch from an API
-      setTimeout(() => {
-        setUsers(sampleUsers);
+      try {
+        setLoading(true);
+        const response = await fetch(`${BASE_URL}/get-all-users`); 
+        const data = await response.json();
+        
+        const transformedUsers = data.map(user => ({
+          ...user,
+          key: user._id,
+          status: "active",
+          lastLogin: new Date().toLocaleString(), 
+        }));
+        
+        setUsers(transformedUsers);
+      } catch (error) {
+        message.error('Failed to fetch users');
+        console.error('Error fetching users:', error);
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
     fetchUsers();
   }, []);
 
-  // Filter users based on search text
-  const filteredUsers = users.filter(
+ const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchText.toLowerCase()) ||
       user.email.toLowerCase().includes(searchText.toLowerCase()) ||
       user.role.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Define status colors
   const getStatusColor = (status) => {
     switch (status) {
       case "active":
@@ -110,7 +62,6 @@ const Users = () => {
     }
   };
 
-  // Handle edit button click
   const handleEdit = (record) => {
     setCurrentUser(record);
     form.setFieldsValue({
@@ -122,17 +73,17 @@ const Users = () => {
     setEditModalVisible(true);
   };
 
-  // Handle delete button click
   const handleDelete = (record) => {
     setCurrentUser(record);
     setDeleteModalVisible(true);
   };
 
-  // Handle edit form submission
-  const handleEditSubmit = () => {
-    form.validateFields().then((values) => {
+  const handleEditSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      
       const updatedUsers = users.map((user) => {
-        if (user.id === currentUser.id) {
+        if (user._id === currentUser._id) {
           return { ...user, ...values };
         }
         return user;
@@ -140,18 +91,23 @@ const Users = () => {
       
       setUsers(updatedUsers);
       setEditModalVisible(false);
-      // In a real app, you would make API call here
-      console.log("User updated:", { id: currentUser.id, ...values });
-    });
+      message.success('User updated successfully');
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
   };
 
-  // Handle delete confirmation
-  const handleDeleteConfirm = () => {
-    const updatedUsers = users.filter((user) => user.id !== currentUser.id);
-    setUsers(updatedUsers);
-    setDeleteModalVisible(false);
-    // In a real app, you would make API call here
-    console.log("User deleted:", currentUser.id);
+  const handleDeleteConfirm = async () => {
+    try {
+
+      const updatedUsers = users.filter((user) => user._id !== currentUser._id);
+      setUsers(updatedUsers);
+      setDeleteModalVisible(false);
+      message.success('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      message.error('Failed to delete user');
+    }
   };
 
   const columns = [
@@ -177,10 +133,14 @@ const Users = () => {
       title: "Role",
       dataIndex: "role",
       key: "role",
+      render: (role) => (
+        <Tag color={role === 'admin' ? 'red' : 'blue'}>
+          {role.toUpperCase()}
+        </Tag>
+      ),
       filters: [
-        { text: "Admin", value: "Admin" },
-        { text: "User", value: "User" },
-        { text: "Editor", value: "Editor" },
+        { text: "Admin", value: "admin" },
+        { text: "User", value: "user" },
       ],
       onFilter: (value, record) => record.role === value,
       responsive: ["md", "lg", "xl"],
@@ -190,6 +150,12 @@ const Users = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => <Tag color={getStatusColor(status)}>{status.toUpperCase()}</Tag>,
+      filters: [
+        { text: "Active", value: "active" },
+        { text: "Inactive", value: "inactive" },
+        { text: "Pending", value: "pending" },
+      ],
+      onFilter: (value, record) => record.status === value,
       responsive: ["sm", "md", "lg", "xl"],
     },
     {
@@ -203,8 +169,19 @@ const Users = () => {
       key: "actions",
       render: (_, record) => (
         <Space size="middle">
-          <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(record)} 
+            disabled={record.role === 'admin'} // Disable edit for admins (example)
+          />
+          <Button 
+            type="text" 
+            danger 
+            icon={<DeleteOutlined />} 
+            onClick={() => handleDelete(record)}
+            disabled={record.role === 'admin'} // Disable delete for admins (example)
+          />
         </Space>
       ),
       responsive: ["xs", "sm", "md", "lg", "xl"],
@@ -242,7 +219,7 @@ const Users = () => {
           <Table
             columns={columns}
             dataSource={filteredUsers}
-            rowKey="id"
+            rowKey="_id"
             scroll={{ x: 1000 }}
             pagination={{
               pageSize: 5,
@@ -263,6 +240,7 @@ const Users = () => {
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditSubmit}
         okText="Save Changes"
+        destroyOnClose
       >
         <Form
           form={form}
@@ -292,9 +270,8 @@ const Users = () => {
             rules={[{ required: true, message: "Please select user role!" }]}
           >
             <Select placeholder="Select a role">
-              <Option value="Admin">Admin</Option>
-              <Option value="User">User</Option>
-              <Option value="Editor">Editor</Option>
+              <Option value="admin">Admin</Option>
+              <Option value="user">User</Option>
             </Select>
           </Form.Item>
           <Form.Item

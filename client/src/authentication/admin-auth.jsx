@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { gsap } from "gsap";
@@ -11,15 +10,15 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { BASE_URL } from "../utils/api";
 
-
-export default function AuthForm() {
+export default function AdminAuth() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true); 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
+    adminSecret: ""
   });
   const [loading, setLoading] = useState(false);
   
@@ -160,30 +159,38 @@ export default function AuthForm() {
     setLoading(true);
   
     try {
-      const endpoint = isLogin ? "/login" : "/signup";
+      const endpoint = isLogin ? "/admin-login" : "/admin-signup";
       const data = isLogin 
         ? { email: formData.email, password: formData.password }
-        : { name: formData.fullName, email: formData.email, password: formData.password };
+        : { 
+            name: formData.name, 
+            email: formData.email, 
+            password: formData.password,
+            adminSecret: formData.adminSecret
+          };
 
       const response = await axios.post(`${BASE_URL}${endpoint}`, data);
       
       if (isLogin) {
         if (response.data.data?.token) {
           localStorage.setItem("authToken", response.data.data.token);
-          toast.success("You are logged in successfully!");
+          toast.success("Admin logged in successfully!");
           setTimeout(() => navigate("/"), 2000);
         }
       } else {
-        toast.success("Registration successful! Please login.");
+        toast.success("Admin registration successful! Please login.");
         handleTabChange(true);
         setFormData(prev => ({
-          fullName: "",
+          name: "",
           email: prev.email,
-          password: ""
+          password: "",
+          adminSecret: ""
         }));
       }
     } catch (err) {
-      toast.error("Invalid credentials. Please try again later.");
+      console.error(err);
+      const errorMessage = err.response?.data?.error || "An error occurred. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -194,10 +201,6 @@ export default function AuthForm() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
-  };
-
-  const navigateToAdminRegister = () => {
-    navigate("/admin-register");
   };
 
   return (
@@ -214,7 +217,7 @@ export default function AuthForm() {
               />
             </div>
             <p className="text-gray-700 text-xs sm:text-sm px-2">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incidi
+              Admin portal for managing application content and users
             </p>
           </div>
 
@@ -227,13 +230,13 @@ export default function AuthForm() {
                 className={`p-2 sm:p-3 text-xs sm:text-sm cursor-pointer rounded-xl ${!isLogin ? "text-red-600" : "text-gray-600"}`}
                 onClick={() => handleTabChange(false)}
               >
-                Sign Up
+                Admin SignUp
               </button>
               <button
                 className={`p-2 sm:p-3 text-xs sm:text-sm cursor-pointer rounded-xl ${isLogin ? "text-red-600" : "text-gray-600"}`}
                 onClick={() => handleTabChange(true)}
               >
-                Login
+                Admin Login
               </button>
             </div>
             <div
@@ -245,17 +248,30 @@ export default function AuthForm() {
           <div className="form-content">
             <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
               {!isLogin && (
-                <div>
-                  <input
-                    type="text"
-                    name="fullName"
-                    required
-                    placeholder="Full name"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    className="appearance-none relative block bg-[#E3E3E380] outline-none text-xs sm:text-sm rounded-xl sm:rounded-2xl w-full px-3 py-2.5 sm:py-3 placeholder-gray-500 text-gray-900"
-                  />
-                </div>
+                <>
+                  <div>
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      placeholder="Full name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="appearance-none relative block bg-[#E3E3E380] outline-none text-xs sm:text-sm rounded-xl sm:rounded-2xl w-full px-3 py-2.5 sm:py-3 placeholder-gray-500 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="password"
+                      name="adminSecret"
+                      required
+                      placeholder="Admin Secret"
+                      value={formData.adminSecret}
+                      onChange={handleChange}
+                      className="appearance-none relative block bg-[#E3E3E380] outline-none text-xs sm:text-sm rounded-xl sm:rounded-2xl w-full px-3 py-2.5 sm:py-3 placeholder-gray-500 text-gray-900"
+                    />
+                  </div>
+                </>
               )}
 
               <div>
@@ -286,7 +302,7 @@ export default function AuthForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 mb-6" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 mb-6" />}
+                  {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
                 </button>
                 
                 {isLogin && (
@@ -330,19 +346,6 @@ export default function AuthForm() {
                 </button>
               </div>
 
-              {/* Admin Registration Option */}
-              {!isLogin && (
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={navigateToAdminRegister}
-                    className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium underline underline-offset-2"
-                  >
-                    Register as Administrator
-                  </button>
-                </div>
-              )}
-
               <div className="relative py-2 sm:py-3">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>
@@ -380,12 +383,12 @@ export default function AuthForm() {
 
           <div className="text-center text-xs sm:text-sm">
             <p className="text-gray-600">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin ? "Don't have an admin account? " : "Already have an admin account? "}
               <button 
                 onClick={() => handleTabChange(!isLogin)} 
                 className="text-red-600 underline underline-offset-3 hover:text-[#a66832] font-medium"
               >
-                {isLogin ? "Sign up" : "Login"}
+                {isLogin ? "Admin SignUp" : "Admin Login"}
               </button>
             </p>
           </div>

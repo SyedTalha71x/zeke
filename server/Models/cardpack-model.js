@@ -34,6 +34,13 @@ const cardPackSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  category:{
+    type: String,
+  },
+  inStock: {
+    type: Boolean,
+    default: true
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -5,6 +5,7 @@ import { configDotenv } from 'dotenv';
 import UserRoutes from './Routes/user-routes.js'
 import CardRoutes from './Routes/card-routes.js'
 import ProfileRoutes from './Routes/profile-routes.js'
+import AdminRoutes from './Routes/admin-routes.js'
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -26,7 +27,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', UserRoutes)
 app.use('/api', CardRoutes)
 app.use('/api', ProfileRoutes)
-
+app.use('/api', AdminRoutes)
 
 app.get('/', (req, res) => {
     res.send('Server is running');

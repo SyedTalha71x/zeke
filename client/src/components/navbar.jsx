@@ -1,12 +1,14 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import NavLogo from "../../public/nav_logo.svg";
 import WhiteNavLogo from "../../public/white-nav-logo.svg";
+import  { jwtDecode } from 'jwt-decode'
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [UserRole, setUserRole] = useState("")
   const location = useLocation();
 
   useEffect(() => {
@@ -18,6 +20,20 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        
+        setUserRole(decoded.role || null);
+      } catch (error) {
+        console.error("Invalid token:", error);
+        setUserRole(null);
+      }
+    }
+  }, []);
+
   const isStyledAuthPage =
     location.pathname.includes("login-signup") ||
     location.pathname.includes("forgot-password") ||
@@ -27,14 +43,16 @@ export default function Navbar() {
     location.pathname.includes("user-profile") ||
     location.pathname.includes("faqs") ||
     location.pathname.includes("privacy-policy") ||
-    location.pathname.includes("add-payment-method");
+    location.pathname.includes("add-payment-method") ||
+    location.pathname.includes("admin-register");
 
   const showLoginSignup =
     location.pathname.includes("login-signup") ||
     location.pathname.includes("forgot-password") ||
     location.pathname.includes("add-payment-method") ||
     location.pathname.includes("verify-otp") ||
-    location.pathname.includes("reset-password");
+    location.pathname.includes("reset-password") || 
+    location.pathname.includes("admin-register");
 
   const isSingleCardDetail =
     location.pathname.includes("card-details") ||
@@ -42,6 +60,7 @@ export default function Navbar() {
     location.pathname.includes("faqs") ||
     location.pathname.includes("privacy-policy");
 
+    
   const redirectToDashboard = () => {
     const token = localStorage.getItem("authToken");
     if (token) {
@@ -76,7 +95,9 @@ export default function Navbar() {
               alt="Navigation Logo"
             />
           </div>
-          <div>
+          <div className="flex items-center gap-2 md:flex-row flex-col ">
+            <div>
+
             {showLoginSignup ? (
               <button
                 onClick={redirectToLoginSignup}
@@ -96,7 +117,15 @@ export default function Navbar() {
                 My Account
               </button>
             )}
+             </div>  
+            { UserRole === "admin" && <div>
+              <Link to={"/dashboard/overview"}>
+            <button
+             className="inline-flex items-center px-4 py-2 bg-[#2F456C] rounded-2xl text-sm font-medium text-white cursor-pointer">Admin Dashboard</button>
+             </Link>
+          </div>}
           </div>
+       
         </div>
       </div>
     </nav>

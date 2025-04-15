@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { Table, Tag, Space, Button, Tabs } from "antd";
+import { Table, Tag, Space, Button, Tabs, message } from "antd";
 import ReactApexChart from "react-apexcharts";
 import {
   ShoppingCartOutlined,
@@ -8,45 +8,46 @@ import {
   UserOutlined,
   DollarOutlined,
 } from "@ant-design/icons";
+import {BASE_URL} from "../utils/api";
 
 const DashboardOverview = () => {
-  const [products, setProducts] = useState([]);
+  const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState("line");
 
-  // Mock data for the cards
-  const cardData = [
+  // Card data for the stats cards
+  const [cardData, setCardData] = useState([
     {
       title: "Total Sales",
-      value: "$24,780",
+      value: "$0",
       icon: <DollarOutlined />,
       color: "bg-blue-500",
-      increase: "+12.5%",
+      increase: "+0%",
     },
     {
-      title: "Total Products",
-      value: "124",
+      title: "Total Cards",
+      value: "0",
       icon: <ShoppingOutlined />,
       color: "bg-green-500",
-      increase: "+3.2%",
+      increase: "+0%",
     },
     {
-      title: "Total Customers",
-      value: "843",
-      icon: <UserOutlined />,
-      color: "bg-purple-500",
-      increase: "+18.7%",
-    },
-    {
-      title: "Total Orders",
-      value: "432",
+      title: "Total Boxes",
+      value: "0",
       icon: <ShoppingCartOutlined />,
-      color: "bg-orange-500",
-      increase: "+7.4%",
+      color: "bg-purple-500",
+      increase: "+0%",
     },
-  ];
+    {
+      title: "Avg. Price",
+      value: "$0",
+      icon: <DollarOutlined />,
+      color: "bg-orange-500",
+      increase: "+0%",
+    },
+  ]);
 
-  // Mock data for the chart
+  // Mock data for the chart (you can replace this with actual sales data if available)
   const salesData = [
     { month: "Jan", sales: 4000, orders: 150 },
     { month: "Feb", sales: 3000, orders: 120 },
@@ -258,107 +259,28 @@ const DashboardOverview = () => {
     },
   ];
 
-  // Mock data for the products table
-  const mockProducts = [
-    {
-      key: "1",
-      id: 1,
-      name: "Wireless Headphones",
-      category: "Electronics",
-      price: 129.99,
-      stock: 45,
-      status: "In Stock",
-      sales: 120,
-      rating: 4.5,
-    },
-    {
-      key: "2",
-      id: 2,
-      name: "Smartphone Case",
-      category: "Accessories",
-      price: 24.99,
-      stock: 120,
-      status: "In Stock",
-      sales: 350,
-      rating: 4.2,
-    },
-    {
-      key: "3",
-      id: 3,
-      name: "Laptop Backpack",
-      category: "Bags",
-      price: 59.99,
-      stock: 18,
-      status: "Low Stock",
-      sales: 75,
-      rating: 4.7,
-    },
-    {
-      key: "4",
-      id: 4,
-      name: "Bluetooth Speaker",
-      category: "Electronics",
-      price: 79.99,
-      stock: 0,
-      status: "Out of Stock",
-      sales: 200,
-      rating: 4.3,
-    },
-    {
-      key: "5",
-      id: 5,
-      name: "Fitness Tracker",
-      category: "Wearables",
-      price: 89.99,
-      stock: 32,
-      status: "In Stock",
-      sales: 180,
-      rating: 4.6,
-    },
-    {
-      key: "6",
-      id: 6,
-      name: "Wireless Earbuds",
-      category: "Electronics",
-      price: 99.99,
-      stock: 25,
-      status: "In Stock",
-      sales: 220,
-      rating: 4.8,
-    },
-    {
-      key: "7",
-      id: 7,
-      name: "Smart Watch",
-      category: "Wearables",
-      price: 199.99,
-      stock: 15,
-      status: "Low Stock",
-      sales: 95,
-      rating: 4.4,
-    },
-  ];
-
-  // Table columns configuration
+  // Table columns configuration for cards
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       key: "id",
       width: 70,
+      render: (_, record, index) => index + 1,
     },
     {
-      title: "Product Name",
+      title: "Card Name",
       dataIndex: "name",
       key: "name",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <span className="font-medium">{text}</span>,
       width: 200,
     },
     {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
-      width: 150,
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      width: 250,
+      ellipsis: true,
     },
     {
       title: "Price",
@@ -369,76 +291,115 @@ const DashboardOverview = () => {
       sorter: (a, b) => a.price - b.price,
     },
     {
-      title: "Stock",
-      dataIndex: "stock",
-      key: "stock",
-      width: 100,
-      sorter: (a, b) => a.stock - b.stock,
+      title: "Box Count",
+      dataIndex: "boxCount",
+      key: "boxCount",
+      width: 120,
+      sorter: (a, b) => a.boxCount - b.boxCount,
     },
     {
-      title: "Sales",
-      dataIndex: "sales",
-      key: "sales",
-      width: 100,
-      sorter: (a, b) => a.sales - b.sales,
-    },
-    {
-      title: "Rating",
-      dataIndex: "rating",
-      key: "rating",
-      width: 100,
-      sorter: (a, b) => a.rating - b.rating,
+      title: "Cards Available",
+      dataIndex: "cardsAvailable",
+      key: "cardsAvailable",
+      width: 150,
+      sorter: (a, b) => a.cardsAvailable - b.cardsAvailable,
     },
     {
       title: "Status",
-      key: "status",
-      dataIndex: "status",
-      width: 150,
-      render: (status) => {
-        let color = "green";
-        if (status === "Out of Stock") {
-          color = "red";
-        } else if (status === "Low Stock") {
-          color = "orange";
-        }
+      key: "inStock",
+      dataIndex: "inStock",
+      width: 120,
+      render: (inStock) => {
+        const status = inStock ? "In Stock" : "Out of Stock";
+        const color = inStock ? "green" : "red";
+        return <Tag color={color}>{status}</Tag>;
+      },
+      filters: [
+        { text: 'In Stock', value: true },
+        { text: 'Out of Stock', value: false },
+      ],
+      onFilter: (value, record) => record.inStock === value,
+    },
+    {
+      title: "Verified",
+      key: "isVerified",
+      dataIndex: "isVerified",
+      width: 120,
+      render: (isVerified) => {
+        const status = isVerified ? "Verified" : "Not Verified";
+        const color = isVerified ? "green" : "orange";
         return <Tag color={color}>{status}</Tag>;
       },
     },
-    // {
-    //   title: "Action",
-    //   key: "action",
-    //   fixed: "right",
-    //   width: 150,
-    //   render: (_, record) => (
-    //     <Space size="middle">
-    //       <Button type="primary" size="small" ghost>
-    //         Edit
-    //       </Button>
-    //       <Button type="primary" size="small" danger>
-    //         Delete
-    //       </Button>
-    //     </Space>
-    //   ),
-    // },
   ];
 
-  // Simulate fetching products
   useEffect(() => {
-    const fetchProducts = () => {
-      // Simulate API call
-      setTimeout(() => {
-        setProducts(mockProducts);
+    const fetchCards = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${BASE_URL}/get-all-cards`);
+        const data = await response.json();
+        
+        const cardsWithKeys = data.map((card, index) => ({
+          ...card,
+          key: card._id,
+          id: index + 1
+        }));
+        
+        setCards(cardsWithKeys);
+        
+        // Update stats cards
+        const totalSales = data.reduce((sum, card) => sum + (card.price * card.cardsAvailable), 0);
+        const totalBoxes = data.reduce((sum, card) => sum + card.boxCount, 0);
+        const totalCards = data.reduce((sum, card) => sum + card.cardsAvailable, 0);
+        const avgPrice = data.length > 0 ? totalSales / totalCards : 0;
+        
+        setCardData([
+          {
+            title: "Total Sales",
+            value: `$${totalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+            icon: <DollarOutlined />,
+            color: "bg-blue-500",
+            increase: "+12.5%",
+          },
+          {
+            title: "Total Cards",
+            value: totalCards.toLocaleString(),
+            icon: <ShoppingOutlined />,
+            color: "bg-green-500",
+            increase: "+3.2%",
+          },
+          {
+            title: "Total Boxes",
+            value: totalBoxes.toLocaleString(),
+            icon: <ShoppingCartOutlined />,
+            color: "bg-purple-500",
+            increase: "+18.7%",
+          },
+          {
+            title: "Avg. Price",
+            value: `$${avgPrice.toFixed(2)}`,
+            icon: <DollarOutlined />,
+            color: "bg-orange-500",
+            increase: "+7.4%",
+          },
+        ]);
+        
+      } catch (error) {
+        message.error('Failed to fetch cards data');
+        console.error('Error fetching cards:', error);
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
-    fetchProducts();
+    fetchCards();
   }, []);
 
   return (
     <div className="p-6 bg-gray-50">
-      <h1 className="text-2xl font-bold mb-6  text-gray-800">
-        Dashboard Overview
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        Overview
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -479,8 +440,6 @@ const DashboardOverview = () => {
         </div>
         <div className="h-96 overflow-x-auto">
           <div className="min-w-[600px]">
-            {" "}
-            {/* Adjust min-width as needed */}
             <ReactApexChart
               options={
                 chartType === "line" ? lineChartOptions : barChartOptions
@@ -492,14 +451,14 @@ const DashboardOverview = () => {
         </div>
       </div>
 
-      {/* Products Table */}
+      {/* Cards Table */}
       <div className="bg-[#FFFFFF] rounded-xl shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Products List</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Trading Cards Inventory</h2>
         </div>
         <Table
           columns={columns}
-          dataSource={products}
+          dataSource={cards}
           loading={loading}
           pagination={{
             pageSize: 5,
@@ -509,7 +468,7 @@ const DashboardOverview = () => {
               `${range[0]}-${range[1]} of ${total} items`,
           }}
           scroll={{ x: 1300 }}
-          className="product-table"
+          className="cards-table"
           rowClassName="transition-all hover:bg-gray-50"
         />
       </div>

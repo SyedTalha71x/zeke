@@ -30,6 +30,7 @@ import AdminDashboard from './layout/dashboard-layout'
 import AdminDashbaordHome from './dashboardPages/home'
 import AdminProducts from './dashboardPages/products'
 import AdminUserConfiguration from './dashboardPages/users'
+import AdminAuth from "./authentication/admin-auth";
 
 function App() {
   return (
@@ -52,6 +53,8 @@ function AppContent() {
         <Route path="/login-signup" element={<Auth />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/admin-register" element={<AdminAuth />} />
+
 
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/card-details/:id" element={<CardDetailsPack />} />

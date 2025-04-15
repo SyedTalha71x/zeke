@@ -26,7 +26,7 @@ const uploadImage = async (file) => {
 
 export const createCardPack = async (req, res) => {
     try {
-      const { name, description, boxCount, cardsAvailable, price } = req.body;
+      const { name, description, boxCount, cardsAvailable, price, category, inStock } = req.body;
   
       if (!req.file) {
         return res.status(400).json({ 
@@ -44,6 +44,8 @@ export const createCardPack = async (req, res) => {
         cardsAvailable: Number(cardsAvailable),
         price: Number(price),
         imageUrl: imageUrl,
+        category,
+        inStock
       });
   
       const savedCardPack = await newCardPack.save();
