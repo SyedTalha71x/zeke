@@ -1,4 +1,5 @@
 import CardPack from "../Models/cardpack-model.js";
+import Contact from "../Models/contact-model.js";
 import User from "../Models/user-model.js";
 
 export const getAllProducts = async (req,res) =>{
@@ -17,4 +18,35 @@ export const getAllUsers = async (req,res) =>{
     } catch (error) {
       res.status(500).json({message: 'Internal Server Error'});
     }
+}
+
+export const getAnalytics = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalCardPacks = await CardPack.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalCardPacks,
+      }
+    });
+  } catch (error) {
+    console.error('Analytics Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch analytics',
+      error: error.message,
+    });
+  }
+};
+
+export const getNotifications = async (req, res) =>{
+  try {
+    const getNotificationsAll = await Contact.find().sort({ createdAt: -1 });
+    res.status(200).json(getNotificationsAll);
+  } catch (error) {
+    res.status(500).json({message: 'Internal Server Error'});
+  }
 }

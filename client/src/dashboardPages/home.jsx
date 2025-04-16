@@ -8,31 +8,34 @@ import {
   UserOutlined,
   DollarOutlined,
 } from "@ant-design/icons";
-import {BASE_URL} from "../utils/api";
+import { BASE_URL } from "../utils/api";
 
 const DashboardOverview = () => {
+  const [analytics, setAnalytics] = useState({
+    totalUsers: 0,
+    totalCardPacks: 0
+  });
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState("line");
 
-  // Card data for the stats cards
   const [cardData, setCardData] = useState([
     {
-      title: "Total Sales",
-      value: "$0",
-      icon: <DollarOutlined />,
+      title: "Total Users",
+      value: "0",
+      icon: <UserOutlined />,
       color: "bg-blue-500",
       increase: "+0%",
     },
     {
-      title: "Total Cards",
+      title: "Total Card Packs",
       value: "0",
       icon: <ShoppingOutlined />,
       color: "bg-green-500",
       increase: "+0%",
     },
     {
-      title: "Total Boxes",
+      title: "Total Sales",
       value: "0",
       icon: <ShoppingCartOutlined />,
       color: "bg-purple-500",
@@ -47,7 +50,6 @@ const DashboardOverview = () => {
     },
   ]);
 
-  // Mock data for the chart (you can replace this with actual sales data if available)
   const salesData = [
     { month: "Jan", sales: 4000, orders: 150 },
     { month: "Feb", sales: 3000, orders: 120 },
@@ -58,7 +60,6 @@ const DashboardOverview = () => {
     { month: "Jul", sales: 3490, orders: 130 },
   ];
 
-  // ApexCharts options for line chart
   const lineChartOptions = {
     chart: {
       height: 350,
@@ -334,6 +335,49 @@ const DashboardOverview = () => {
   ];
 
   useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/get-analytics`);
+        const data = await response.json();
+        if (data.success) {
+          setAnalytics(data.data);
+          setCardData([
+            {
+              title: "Total Users",
+              value: data.data.totalUsers.toString(),
+              icon: <UserOutlined />,
+              color: "bg-blue-500",
+              increase: "+0%",
+            },
+            {
+              title: "Total Card Packs",
+              value: data.data.totalCardPacks.toString(),
+              icon: <ShoppingOutlined />,
+              color: "bg-green-500",
+              increase: "+0%",
+            },
+            {
+              title: "Total Sales",
+              value: "0",
+              icon: <ShoppingCartOutlined />,
+              color: "bg-purple-500",
+              increase: "+0%",
+            },
+            {
+              title: "Avg. Price",
+              value: "$0",
+              icon: <DollarOutlined />,
+              color: "bg-orange-500",
+              increase: "+0%",
+            },
+          ]);
+        }
+      } catch (error) {
+        message.error('Failed to fetch analytics data');
+        console.error('Error fetching analytics:', error);
+      }
+    };
+
     const fetchCards = async () => {
       try {
         setLoading(true);
@@ -348,40 +392,27 @@ const DashboardOverview = () => {
         
         setCards(cardsWithKeys);
         
-        // Update stats cards
-        const totalSales = data.reduce((sum, card) => sum + (card.price * card.cardsAvailable), 0);
+        // Update stats cards with boxes and price data
         const totalBoxes = data.reduce((sum, card) => sum + card.boxCount, 0);
-        const totalCards = data.reduce((sum, card) => sum + card.cardsAvailable, 0);
-        const avgPrice = data.length > 0 ? totalSales / totalCards : 0;
+        const avgPrice = data.length > 0 ? 
+          data.reduce((sum, card) => sum + card.price, 0) / data.length : 0;
         
-        setCardData([
-          {
-            title: "Total Sales",
-            value: `$${totalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
-            icon: <DollarOutlined />,
-            color: "bg-blue-500",
-            increase: "+12.5%",
-          },
-          {
-            title: "Total Cards",
-            value: totalCards.toLocaleString(),
-            icon: <ShoppingOutlined />,
-            color: "bg-green-500",
-            increase: "+3.2%",
-          },
+        setCardData(prev => [
+          prev[0], // Keep users data
+          prev[1], // Keep card packs data
           {
             title: "Total Boxes",
             value: totalBoxes.toLocaleString(),
             icon: <ShoppingCartOutlined />,
             color: "bg-purple-500",
-            increase: "+18.7%",
+            increase: "+0%",
           },
           {
             title: "Avg. Price",
             value: `$${avgPrice.toFixed(2)}`,
             icon: <DollarOutlined />,
             color: "bg-orange-500",
-            increase: "+7.4%",
+            increase: "+0%",
           },
         ]);
         
@@ -393,6 +424,7 @@ const DashboardOverview = () => {
       }
     };
 
+    fetchAnalytics();
     fetchCards();
   }, []);
 

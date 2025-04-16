@@ -6,6 +6,7 @@ import UserRoutes from './Routes/user-routes.js'
 import CardRoutes from './Routes/card-routes.js'
 import ProfileRoutes from './Routes/profile-routes.js'
 import AdminRoutes from './Routes/admin-routes.js'
+import ContactRoutes from './Routes/contact-routes.js'
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -28,6 +29,8 @@ app.use('/api', UserRoutes)
 app.use('/api', CardRoutes)
 app.use('/api', ProfileRoutes)
 app.use('/api', AdminRoutes)
+app.use('/api', ContactRoutes)
+
 
 app.get('/', (req, res) => {
     res.send('Server is running');

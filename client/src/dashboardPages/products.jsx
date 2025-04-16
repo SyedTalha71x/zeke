@@ -1,8 +1,11 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react"
-import { Table, Button, Form, Input, InputNumber, Modal, message, Upload, Space, Tag, Collapse } from "antd"
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, ExclamationCircleOutlined } from "@ant-design/icons"
+import { Table, Button, Form, Input, InputNumber, Modal, message, Upload, Space, Tag, Collapse, Select } from "antd"
+import { EditOutlined, DeleteOutlined, UploadOutlined, ExclamationCircleOutlined } from "@ant-design/icons"
 import { BASE_URL } from "../utils/api"
+import toast, { Toaster } from "react-hot-toast";
+
 const { Panel } = Collapse
 
 const ProductsManagement = () => {
@@ -33,68 +36,154 @@ const ProductsManagement = () => {
 
   const [addForm] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false)
   const [isEditModalVisible, setIsEditModalVisible] = useState(false)
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false)
   const [currentProduct, setCurrentProduct] = useState(null)
+  const [addLoading, setAddLoading] = useState(false)
 
-  // Handle Add Product
-  const handleAddProduct = (values) => {
-    const newProduct = {
-      ...values,
-      _id: `temp-${Date.now()}`,
-      key: `temp-${Date.now()}`,
-      id: products.length + 1,
-      inStock: true,
-      isVerified: false,
-      createdAt: new Date().toISOString(),
-      __v: 0
+  const handleAddProduct = async (values) => {
+    try {
+      setAddLoading(true)
+      
+      const formData = new FormData()
+      formData.append('name', values.name)
+      formData.append('description', values.description)
+      formData.append('boxCount', values.boxCount)
+      formData.append('cardsAvailable', values.cardsAvailable)
+      formData.append('price', values.price)
+      formData.append('category', values.category || 'default')
+      formData.append('inStock', values.inStock !== undefined ? values.inStock : true)
+      
+      // Append the image file
+      if (values.image && values.image[0]?.originFileObj) {
+        formData.append('image', values.image[0].originFileObj)
+      } else {
+        message.error("Please upload an image for the card")
+        setAddLoading(false)
+        return 
+      }
+
+      const response = await fetch(`${BASE_URL}/create-card`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to add card')
+      }
+
+      const newProduct = {
+        ...result.cardPack,
+        key: result.cardPack._id,
+        id: products.length + 1
+      }
+
+      setProducts([...products, newProduct])
+      addForm.resetFields()
+      toast.success("Card added successfully")
+    } catch (error) {
+      toast.error(error.message || "Failed to add card")
+    } finally {
+      setAddLoading(false)
     }
-
-    setProducts([...products, newProduct])
-    addForm.resetFields()
-    setIsAddModalVisible(false)
-    message.success("Product added successfully")
   }
 
-  // Handle Edit Product
-  const handleEditProduct = (values) => {
-    const updatedProducts = products.map((product) =>
-      product.key === currentProduct.key
-        ? {
-            ...product,
-            ...values,
-          }
-        : product,
-    )
+  const handleEditProduct = async (values) => {
+    try {
+      setAddLoading(true)
+      
+      const formData = new FormData()
+      formData.append('name', values.name)
+      formData.append('description', values.description)
+      formData.append('boxCount', values.boxCount)
+      formData.append('cardsAvailable', values.cardsAvailable)
+      formData.append('price', values.price)
+      formData.append('category', values.category || 'default')
+      formData.append('inStock', values.inStock !== undefined ? values.inStock : true)
+      
+      if (values.image && values.image[0]?.originFileObj) {
+        formData.append('image', values.image[0].originFileObj)
+      }
 
-    setProducts(updatedProducts)
-    editForm.resetFields()
-    setIsEditModalVisible(false)
-    message.success("Product updated successfully")
+      const response = await fetch(`${BASE_URL}/update-card/${currentProduct._id}`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to update card')
+      }
+
+      const updatedProducts = products.map((product) =>
+        product.key === currentProduct.key
+          ? {
+              ...product,
+              ...result.cardPack,
+              imageUrl: result.cardPack.imageUrl || product.imageUrl 
+            }
+          : product
+      )
+
+      setProducts(updatedProducts)
+      setIsEditModalVisible(false)
+      toast.success("Card updated successfully")
+    } catch (error) {
+      toast.error(error.message || "Failed to update card")
+      console.error('Error updating card:', error)
+    } finally {
+      setAddLoading(false)
+    }
   }
 
-  // Open delete modal
   const showDeleteModal = (record) => {
     setCurrentProduct(record)
     setIsDeleteModalVisible(true)
   }
 
-  // Handle Delete Product
-  const handleDeleteProduct = () => {
-    setProducts(products.filter((product) => product.key !== currentProduct.key))
-    setIsDeleteModalVisible(false)
-    message.success("Product deleted successfully")
+  const handleDeleteProduct = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/delete-card/${currentProduct._id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete card')
+      }
+      
+      setProducts(products.filter((product) => product.key !== currentProduct.key))
+      setIsDeleteModalVisible(false)
+      toast.success("Card deleted successfully")
+    } catch (error) {
+      toast.error(error.message || "Failed to delete card")
+      console.error('Error deleting card:', error)
+    }
   }
 
-  // Edit Product
   const editProduct = (record) => {
     setCurrentProduct(record)
-    editForm.setFieldsValue(record)
+    editForm.setFieldsValue({
+      name: record.name,
+      description: record.description,
+      boxCount: record.boxCount,
+      cardsAvailable: record.cardsAvailable,
+      price: record.price,
+      category: record.category,
+      inStock: record.inStock,
+      image: record.imageUrl ? [{
+        uid: '-1',
+        name: 'image.png',
+        status: 'done',
+        url: `${BASE_URL}${record.imageUrl}`
+      }] : undefined
+    })
     setIsEditModalVisible(true)
   }
 
-  // Product Columns
   const columns = [
     {
       title: "ID",
@@ -187,12 +276,12 @@ const ProductsManagement = () => {
     },
   ]
 
-  const ProductForm = ({ form, onFinish, initialValues = {} }) => {
-    const [fileList, setFileList] = useState([])
-
-    const handleUpload = (info) => {
-      const newFileList = [...info.fileList]
-      setFileList(newFileList)
+  const ProductForm = ({ form, onFinish, initialValues = {}, loading = false }) => {
+    const normFile = (e) => {
+      if (Array.isArray(e)) {
+        return e
+      }
+      return e?.fileList
     }
 
     return (
@@ -225,13 +314,34 @@ const ProductsManagement = () => {
           <InputNumber min={0} placeholder="Enter cards available" style={{ width: "100%" }} />
         </Form.Item>
 
-        <Form.Item name="imageUrl" label="Card Image">
+        <Form.Item name="category" label="Category">
+          <Select placeholder="Select category">
+            <Select.Option value="sports">Sports</Select.Option>
+            <Select.Option value="fantasy">Fantasy</Select.Option>
+            <Select.Option value="collectible">Collectible</Select.Option>
+            <Select.Option value="other">Other</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="inStock" label="In Stock" initialValue={true}>
+          <Select>
+            <Select.Option value={true}>In Stock</Select.Option>
+            <Select.Option value={false}>Out of Stock</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item 
+          name="image" 
+          label="Card Image" 
+          valuePropName="fileList"
+          getValueFromEvent={normFile}
+          rules={[{ required: !initialValues._id, message: "Please upload an image" }]}
+        >
           <Upload
-            listType="picture"
-            fileList={fileList}
-            onChange={handleUpload}
+            listType="picture-card"
             beforeUpload={() => false}
             maxCount={1}
+            accept="image/*"
           >
             <Button icon={<UploadOutlined />}>Upload Image</Button>
           </Upload>
@@ -241,19 +351,18 @@ const ProductsManagement = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50">
+    <> 
+    <Toaster position="top-right" />
+    <div className="md:p-6 p-3 bg-gray-50">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Cards Management</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddModalVisible(true)}>
-          Add Card
-        </Button>
+        <h1 className="text-2xl font-bold text-gray-800  mt-5">Cards Management</h1>
       </div>
 
       <Collapse accordion className="mb-6">
         <Panel header="Add New Card" key="add">
-          <ProductForm form={addForm} onFinish={handleAddProduct} />
+          <ProductForm form={addForm} onFinish={handleAddProduct} loading={addLoading} />
           <div className="text-right mt-4">
-            <Button type="primary" onClick={() => addForm.submit()}>
+            <Button type="primary" onClick={() => addForm.submit()} loading={addLoading}>
               Add Card
             </Button>
           </div>
@@ -275,26 +384,6 @@ const ProductsManagement = () => {
         />
       </div>
 
-      {/* Add Product Modal */}
-      <Modal
-        title="Add New Card"
-        open={isAddModalVisible}
-        onCancel={() => {
-          setIsAddModalVisible(false)
-          addForm.resetFields()
-        }}
-        footer={[
-          <Button key="cancel" onClick={() => setIsAddModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button key="submit" type="primary" onClick={() => addForm.submit()}>
-            Add Card
-          </Button>,
-        ]}
-      >
-        <ProductForm form={addForm} onFinish={handleAddProduct} />
-      </Modal>
-
       {/* Edit Product Modal */}
       <Modal
         title="Edit Card"
@@ -307,7 +396,7 @@ const ProductsManagement = () => {
           <Button key="cancel" onClick={() => setIsEditModalVisible(false)}>
             Cancel
           </Button>,
-          <Button key="submit" type="primary" onClick={() => editForm.submit()}>
+          <Button key="submit" type="primary" onClick={() => editForm.submit()} loading={addLoading}>
             Update Card
           </Button>,
         ]}
@@ -343,6 +432,7 @@ const ProductsManagement = () => {
         </div>
       </Modal>
     </div>
+    </>
   )
 }
 

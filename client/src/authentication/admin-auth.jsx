@@ -176,6 +176,7 @@ export default function AdminAuth() {
           localStorage.setItem("authToken", response.data.data.token);
           toast.success("Admin logged in successfully!");
           setTimeout(() => navigate("/"), 2000);
+          window.location.reload();
         }
       } else {
         toast.success("Admin registration successful! Please login.");

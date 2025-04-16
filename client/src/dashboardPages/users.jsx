@@ -164,28 +164,28 @@ const Users = () => {
       key: "lastLogin",
       responsive: ["lg", "xl"],
     },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space size="middle">
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(record)} 
-            disabled={record.role === 'admin'} // Disable edit for admins (example)
-          />
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />} 
-            onClick={() => handleDelete(record)}
-            disabled={record.role === 'admin'} // Disable delete for admins (example)
-          />
-        </Space>
-      ),
-      responsive: ["xs", "sm", "md", "lg", "xl"],
-    },
+    // {
+    //   title: "Actions",
+    //   key: "actions",
+    //   render: (_, record) => (
+    //     <Space size="middle">
+    //       <Button 
+    //         type="text" 
+    //         icon={<EditOutlined />} 
+    //         onClick={() => handleEdit(record)} 
+    //         disabled={record.role === 'admin'} // Disable edit for admins (example)
+    //       />
+    //       <Button 
+    //         type="text" 
+    //         danger 
+    //         icon={<DeleteOutlined />} 
+    //         onClick={() => handleDelete(record)}
+    //         disabled={record.role === 'admin'} // Disable delete for admins (example)
+    //       />
+    //     </Space>
+    //   ),
+    //   responsive: ["xs", "sm", "md", "lg", "xl"],
+    // },
   ];
 
   const tableProps = {

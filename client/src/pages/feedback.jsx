@@ -1,6 +1,8 @@
 import { useState } from "react"
 import Contact from "../../public/contact.svg"
 import ContactTrending from '../../public/CONTACT.svg'
+import { BASE_URL } from "../utils/api";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function FeedbackSection() {
   const [formData, setFormData] = useState({
@@ -8,21 +10,75 @@ export default function FeedbackSection() {
     lastName: "",
     email: "",
     message: "",
-  })
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState({
+    success: false,
+    message: ""
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log("Form submitted:", formData)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch(`${BASE_URL}/create-contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitStatus({
+          success: true,
+          message: 'Message sent successfully!'
+        });
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          message: "",
+        });
+        toast.success('Message sent successfully, we will get back to your shortly!');
+      } else {
+        setSubmitStatus({
+          success: false,
+          message: data.message || 'Failed to send message. Please try again.'
+        });
+        toast.error('Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmitStatus({
+        success: false,
+        message: 'Network error. Please try again later.'
+      });
+    } finally {
+      setIsSubmitting(false);
+      // Clear status message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus({
+          success: false,
+          message: ""
+        });
+      }, 5000);
+    }
   }
 
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
-    }))
+    }));
   }
 
   return (
+    <>
+   <Toaster position="top-right"/>
     <section className=" mt-16 pb-10">
       <div className="max-w-7xl  mx-auto">
         <div className="text-center mb-12">
@@ -47,6 +103,12 @@ export default function FeedbackSection() {
             
             <div className="h-[3px] bg-red-600 w-24 mr-auto mt-4"></div>
             </div>
+
+            {submitStatus.message && (
+              <div className={`mb-4 p-3 rounded-md ${submitStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {submitStatus.message}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -100,9 +162,10 @@ export default function FeedbackSection() {
 
               <button
                 type="submit"
-                className="w-full bg-[#2F456C] text-white py-3 rounded-3xl cursor-pointer hover:bg-[#2c3952] transition-all ease-in-out duration-500"
+                disabled={isSubmitting}
+                className={`w-full bg-[#2F456C] text-white py-3 rounded-3xl cursor-pointer hover:bg-[#2c3952] transition-all ease-in-out duration-500 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Send message
+                {isSubmitting ? 'Sending...' : 'Send message'}
               </button>
             </form>
           </div>
@@ -111,7 +174,6 @@ export default function FeedbackSection() {
             <img
               src={Contact}
               alt="Vintage telephone"
-              
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
@@ -119,6 +181,6 @@ export default function FeedbackSection() {
         </div>
       </div>
     </section>
+    </>
   )
 }
-

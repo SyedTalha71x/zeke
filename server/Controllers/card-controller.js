@@ -90,35 +90,63 @@ export const getCardPackById = async (req, res) => {
 
 export const updateCardPack = async (req, res) => {
   try {
+
+    const {
+      name,
+      description,
+      boxCount,
+      cardsAvailable,
+      price,
+      category,
+      inStock,
+    } = req.body;
+
+
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
     const cardPack = await CardPack.findById(req.params.id);
+
     if (!cardPack) {
       return res.status(404).json({ message: "Card pack not found" });
     }
 
-    const { name, description, boxCount, cardsAvailable, price } = req.body;
+    const updatedCard = {};
 
-    // Update fields
-    cardPack.name = name || cardPack.name;
-    cardPack.description = description || cardPack.description;
-    cardPack.boxCount = boxCount || cardPack.boxCount;
-    cardPack.cardsAvailable = cardsAvailable || cardPack.cardsAvailable;
-    cardPack.price = price || cardPack.price;
+    if (name !== undefined) updatedCard.name = name;
+    if (description !== undefined) updatedCard.description = description;
+    if (boxCount !== undefined) updatedCard.boxCount = Number(boxCount);
+    if (cardsAvailable !== undefined) updatedCard.cardsAvailable = Number(cardsAvailable);
+    if (price !== undefined) updatedCard.price = Number(price);
+    if (category !== undefined) updatedCard.category = category;
+    if (typeof inStock !== "undefined") updatedCard.inStock = inStock;
 
-    // Handle image update if new file provided
     if (req.file) {
-      // Delete old image from Cloudinary
-      await cloudinary.uploader.destroy(cardPack.imagePublicId);
+      // delete old image if exists
+      if (cardPack.imageUrl) {
+        const oldImagePath = path.join("uploads", path.basename(cardPack.imageUrl));
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
 
-      // Upload new image
-      const image = await uploadImage(req.file);
-      cardPack.imageUrl = image.url;
-      cardPack.imagePublicId = image.publicId;
+      updatedCard.imageUrl = `/uploads/${req.file.filename}`;
     }
 
-    const updatedCardPack = await cardPack.save();
-    res.status(200).json(updatedCardPack);
+    const updatedCardPack = await CardPack.findByIdAndUpdate(
+      req.params.id,
+      { $set: updatedCard },
+      { new: true } // return updated document
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Card pack updated successfully",
+      cardPack: updatedCardPack,
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Update Card Pack Error:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -130,14 +158,16 @@ export const deleteCardPack = async (req, res) => {
       return res.status(404).json({ message: "Card pack not found" });
     }
 
-    // Delete image from Cloudinary
-    await cloudinary.uploader.destroy(cardPack.imagePublicId);
+    await CardPack.findByIdAndDelete(cardPack)
 
-    // Delete card pack from database
-    await cardPack.remove();
-
-    res.status(200).json({ message: "Card pack deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Card pack deleted successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Delete Card Pack Error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
+

@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 import {
   getAllCardPacks,
   createCardPack,
-  getCardPackById
+  getCardPackById,
+  updateCardPack, deleteCardPack
 } from '../Controllers/card-controller.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +39,8 @@ const upload = multer({
 router.get('/get-all-cards', getAllCardPacks);
 router.post('/create-card', upload.single('image'), createCardPack);
 router.get('/get-single-card/:id', getCardPackById);
+router.post('/update-card/:id', upload.single('image'), updateCardPack);
+router.delete('/delete-card/:id', deleteCardPack);
 
 
 export default router;

@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { Sidebar, Menu, MenuItem, SubMenu, ProSidebarProvider, useProSidebar } from "react-pro-sidebar"
 import { Link } from "react-router-dom"
-import { LayoutDashboard, ShoppingBag, Users, Settings, MenuIcon, X } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, Users, Settings, MenuIcon, X, AlertTriangleIcon } from "lucide-react"
 
 // Custom styles to override default hover behavior
 const menuStyles = {
@@ -68,6 +68,11 @@ const SidebarContent = () => {
         //   icon: <Users className="w-4 h-4" />,
         // },
       ],
+    },
+    {
+      icon: <AlertTriangleIcon />,
+      label: "Notifications",
+      path: "/dashboard/notifications",
     },
   ]
 

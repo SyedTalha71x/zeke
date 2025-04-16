@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import CardsImage from "../../public/cards-image.svg";
 import Tick from "../../public/Vector.svg";
 import gradientTrending from "../../public/TRENDING.svg";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios"
 import {BASE_URL} from "../utils/api"
 
@@ -98,9 +98,14 @@ export default function TrendingSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cardsPack.map((pack, index) => (
+        {cardsPack.slice(0,6).map((pack, index) => (
           <CardPack key={index} {...pack} />
         ))}
+      </div>
+      <div className="flex justify-center items-center mt-8">
+        <Link to="/all-cards">
+        <button className="bg-black hero_h1 text-white py-3 px-10 rounded-xl cursor-pointer text-sm hover:bg-gray-800 duration-500 transition-all font-semibold">See More Cards.....</button>
+        </Link>
       </div>
     </section>
   );

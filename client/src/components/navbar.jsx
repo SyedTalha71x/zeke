@@ -44,7 +44,8 @@ export default function Navbar() {
     location.pathname.includes("faqs") ||
     location.pathname.includes("privacy-policy") ||
     location.pathname.includes("add-payment-method") ||
-    location.pathname.includes("admin-register");
+    location.pathname.includes("admin-register") || 
+    location.pathname.includes("all-cards");
 
   const showLoginSignup =
     location.pathname.includes("login-signup") ||
@@ -52,7 +53,8 @@ export default function Navbar() {
     location.pathname.includes("add-payment-method") ||
     location.pathname.includes("verify-otp") ||
     location.pathname.includes("reset-password") || 
-    location.pathname.includes("admin-register");
+    location.pathname.includes("admin-register") ||
+    location.pathname.includes("all-cards");
 
   const isSingleCardDetail =
     location.pathname.includes("card-details") ||

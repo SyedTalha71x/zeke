@@ -15,6 +15,7 @@ import CheckoutPage from "./pages/checkout";
 import FAQPage from "./partials/faqs";
 import PrivacyPolicy from "./partials/privacy-policy";
 import AddPaymentMethod from "./pages/add-payment-method";
+import AllCardsPage from "./pages/all-cards";
 
 import DashboardLayout from "./layout/user-profile";
 import DashboardHome from "./partials/dashboard";
@@ -31,6 +32,7 @@ import AdminDashbaordHome from './dashboardPages/home'
 import AdminProducts from './dashboardPages/products'
 import AdminUserConfiguration from './dashboardPages/users'
 import AdminAuth from "./authentication/admin-auth";
+import AdminNotifications from './dashboardPages/notifications'
 
 function App() {
   return (
@@ -62,6 +64,7 @@ function AppContent() {
         <Route path="/faqs" element={<FAQPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/add-payment-method" element={<AddPaymentMethod />} />
+        <Route path="/all-cards" element={<AllCardsPage />} />
 
         <Route path="user-profile" element={<DashboardLayout />}>
           <Route path="dashboard" element={<DashboardHome />} />
@@ -76,6 +79,8 @@ function AppContent() {
         <Route path="overview" element={<AdminDashbaordHome />} />
         <Route path="product-configuration" element={<AdminProducts />} />
         <Route path="user-configuration" element={<AdminUserConfiguration />} />
+        <Route path="notifications" element={<AdminNotifications />} />
+
 
         </Route>
       </Routes>
