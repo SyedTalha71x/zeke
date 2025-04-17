@@ -8,7 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios"
 import {BASE_URL} from "../utils/api"
 
-function CardPack({ _id, boxCount, cardsAvailable, name, description, price }) {
+function CardPack({ _id, boxCount, cardsAvailable, name, description, price, imageUrl }) {
   const navigate = useNavigate()
 
   const dynamicRedirect = (_id) => {
@@ -27,7 +27,7 @@ function CardPack({ _id, boxCount, cardsAvailable, name, description, price }) {
         </div>
         <div className="card-flip-wrapper">
           <img
-            src={CardsImage || "/placeholder.svg"}
+            src={imageUrl || CardsImage}
             alt="Sports cards pack"
             className="object-contain p-4 mix-blend-darken card-flip"
           />

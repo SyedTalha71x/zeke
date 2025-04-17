@@ -1,71 +1,52 @@
-import { failureResponse, successResponse } from "../Helpers/helper.js";
 import CardPack from "../Models/cardpack-model.js";
 import { cloudinary } from "../Utils/cloudinary.js";
 import fs from "fs";
 import path from "path";
 
-const uploadImage = async (file) => {
+export const createCardPack = async (req, res) => {
   try {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder: "card-packs",
+    const { name, description, boxCount, cardsAvailable, price, category, inStock } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Image is required" 
+      });
+    }
+
+    const imageUrl = req.s3FileUrl || `/uploads/${req.file.filename}`;
+
+    const newCardPack = new CardPack({
+      name,
+      description,
+      boxCount: Number(boxCount),
+      cardsAvailable: Number(cardsAvailable),
+      price: Number(price),
+      imageUrl: imageUrl,
+      category,
+      inStock,
+      s3ImageUrl: req.s3FileUrl,
+      localImageUrl: `/uploads/${req.file.filename}`
     });
 
-    fs.unlinkSync(file.path);
-
-    return {
-      url: result.secure_url,
-      publicId: result.public_id,
-    };
+    const savedCardPack = await newCardPack.save();
+    
+    res.status(201).json({ 
+      success: true,
+      message: "Card pack created successfully",
+      cardPack: savedCardPack 
+    });
+    
   } catch (error) {
-    if (fs.existsSync(file.path)) {
-      fs.unlinkSync(file.path);
-    }
-    throw error; // This will be caught by the createCardPack catch block
+    console.error("Create Card Pack Error:", error);
+
+    res.status(500).json({ 
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
-
-export const createCardPack = async (req, res) => {
-    try {
-      const { name, description, boxCount, cardsAvailable, price, category, inStock } = req.body;
-  
-      if (!req.file) {
-        return res.status(400).json({ 
-          success: false,
-          message: "Image is required" 
-        });
-      }
-  
-      const imageUrl = `/uploads/${req.file.filename}`;
-  
-      const newCardPack = new CardPack({
-        name,
-        description,
-        boxCount: Number(boxCount),
-        cardsAvailable: Number(cardsAvailable),
-        price: Number(price),
-        imageUrl: imageUrl,
-        category,
-        inStock
-      });
-  
-      const savedCardPack = await newCardPack.save();
-      
-      res.status(201).json({ 
-        success: true,
-        message: "Card pack created successfully",
-        cardPack: savedCardPack 
-      });
-      
-    } catch (error) {
-      console.error("Create Card Pack Error:", error);
-  
-      res.status(500).json({ 
-        success: false,
-        message: "Internal server error",
-        error: error.message
-      });
-    }
-  };
 
 export const getAllCardPacks = async (req, res) => {
   try {
@@ -90,7 +71,6 @@ export const getCardPackById = async (req, res) => {
 
 export const updateCardPack = async (req, res) => {
   try {
-
     const {
       name,
       description,
@@ -101,14 +81,9 @@ export const updateCardPack = async (req, res) => {
       inStock,
     } = req.body;
 
-
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
-
     const cardPack = await CardPack.findById(req.params.id);
-
     if (!cardPack) {
-      return res.status(404).json({ message: "Card pack not found" });
+      return res.status(404).json({ success: false, message: "Card pack not found" });
     }
 
     const updatedCard = {};
@@ -122,21 +97,23 @@ export const updateCardPack = async (req, res) => {
     if (typeof inStock !== "undefined") updatedCard.inStock = inStock;
 
     if (req.file) {
-      // delete old image if exists
-      if (cardPack.imageUrl) {
-        const oldImagePath = path.join("uploads", path.basename(cardPack.imageUrl));
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+      // Optionally delete old local image
+      if (cardPack.localImageUrl) {
+        const oldLocalPath = path.join("uploads", path.basename(cardPack.localImageUrl));
+        if (fs.existsSync(oldLocalPath)) {
+          fs.unlinkSync(oldLocalPath);
         }
       }
 
-      updatedCard.imageUrl = `/uploads/${req.file.filename}`;
+      updatedCard.imageUrl = req.s3FileUrl || `/uploads/${req.file.filename}`;
+      updatedCard.s3ImageUrl = req.s3FileUrl;
+      updatedCard.localImageUrl = `/uploads/${req.file.filename}`;
     }
 
     const updatedCardPack = await CardPack.findByIdAndUpdate(
       req.params.id,
       { $set: updatedCard },
-      { new: true } // return updated document
+      { new: true }
     );
 
     res.status(200).json({
@@ -144,11 +121,13 @@ export const updateCardPack = async (req, res) => {
       message: "Card pack updated successfully",
       cardPack: updatedCardPack,
     });
+
   } catch (error) {
     console.error("Update Card Pack Error:", error);
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
   }
 };
+
 
 export const deleteCardPack = async (req, res) => {
   try {

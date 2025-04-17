@@ -1,5 +1,6 @@
 import express from 'express'
-import { Login, Signup, sendOTP, verifyOTP, resetPassword, AdminSignup, AdminLogin } from '../Controllers/user-controller.js';
+import { Login, Signup, sendOTP, verifyOTP, resetPassword, AdminSignup, AdminLogin, getUserOrders } from '../Controllers/user-controller.js';
+import { authMiddleware } from '../Middleware/auth.js';
 
 const router = express.Router();
 
@@ -9,7 +10,11 @@ router.post('/send-otp', sendOTP)
 router.post('/verify-otp', verifyOTP)
 router.post('/reset-password', resetPassword)
 router.post('/admin-signup', AdminSignup)
-router.post('/admin-login', AdminLogin)
+router.post('/admin-login',  AdminLogin)
+
+
+router.get('/get-orders', authMiddleware,   getUserOrders)
+
 
 
 

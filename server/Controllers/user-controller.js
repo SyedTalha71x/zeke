@@ -3,6 +3,7 @@ import User from "../Models/user-model.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../Helpers/helper.js";
 import nodemailer from "nodemailer";
+import CardPurchase from "../Models/card-purchase-model.js";
 
 export const Signup = async (req, res) => {
   const { name, email, password } = req.body;
@@ -60,7 +61,7 @@ export const Login = async (req, res) => {
         .json(failureResponse({ error: "Invalid email or password" }));
     }
 
-    let role = user.role
+    let role = user.role;
 
     const token = generateToken(user._id, user.email, role);
     return res
@@ -271,15 +272,34 @@ export const AdminLogin = async (req, res) => {
         .json(failureResponse({ error: "Invalid email or password" }));
     }
 
-    let role = user.role
+    let role = user.role;
 
     const token = generateToken(user._id, user.email, role);
 
-    return res.status(200).json(successResponse({ token }, "Admin login successful"));
+    return res
+      .status(200)
+      .json(successResponse({ token }, "Admin login successful"));
   } catch (err) {
     console.error(err.message);
     return res
       .status(500)
       .json(failureResponse({ error: "Internal Server Error" }));
+  }
+};
+export const getUserOrders = async (req,res) => {
+  try {
+    const userId = req.user?.userId;
+    if(!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const orders = await CardPurchase.find({userId: userId}).populate('cardPackId');
+    if (!orders) {
+      return res.status(404).json({ message: 'No orders found' });
+    }
+    return res.status(200).json(orders);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };

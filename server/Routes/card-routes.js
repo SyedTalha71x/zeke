@@ -2,15 +2,24 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import AWS from 'aws-sdk';
+import fs from 'fs';
 import {
   getAllCardPacks,
   createCardPack,
   getCardPackById,
-  updateCardPack, deleteCardPack
+  updateCardPack, 
+  deleteCardPack
 } from '../Controllers/card-controller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
 
 const router = express.Router();
 
@@ -36,11 +45,41 @@ const upload = multer({
   }
 });
 
-router.get('/get-all-cards', getAllCardPacks);
-router.post('/create-card', upload.single('image'), createCardPack);
-router.get('/get-single-card/:id', getCardPackById);
-router.post('/update-card/:id', upload.single('image'), updateCardPack);
-router.delete('/delete-card/:id', deleteCardPack);
+const uploadToS3 = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next();
+    }
+    
+    const localFilePath = req.file.path;
+    const fileContent = fs.readFileSync(localFilePath);
+    
+    const params = {
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: `card-images/${req.file.filename}`,
+      Body: fileContent,
+      ContentType: req.file.mimetype,
+    };
+    
+    const s3Upload = await s3.upload(params).promise();
+    
+    req.s3FileUrl = s3Upload.Location;
+    
+    next();
+  } catch (error) {
+    console.error("S3 Upload Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error uploading file to S3",
+      error: error.message
+    });
+  }
+};
 
+router.get('/get-all-cards', getAllCardPacks);
+router.post('/create-card', upload.single('image'), uploadToS3, createCardPack);
+router.get('/get-single-card/:id', getCardPackById);
+router.post('/update-card/:id', upload.single('image'), uploadToS3, updateCardPack);
+router.delete('/delete-card/:id', deleteCardPack);
 
 export default router;

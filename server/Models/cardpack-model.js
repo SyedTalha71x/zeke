@@ -41,6 +41,12 @@ const cardPackSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  s3ImageUrl:{
+    type: String,
+  },
+  localImageUrl:{
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now

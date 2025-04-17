@@ -21,15 +21,15 @@ export default function PackDetails() {
         if (!id) {
           throw new Error("No pack ID provided");
         }
-        
+
         const response = await fetch(`${BASE_URL}/get-single-card/${id}`);
-        
+
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
         }
 
         const data = await response.json();
-        
+
         // Add hardcoded tier property to each card
         if (data.cards && data.cards.length > 0) {
           // Assign first 3 cards as tier 1, rest as tier 2
@@ -38,7 +38,7 @@ export default function PackDetails() {
             tier: index < 3 ? 1 : 2
           }));
         }
-        
+
         setCardPack(data);
         setLoading(false);
       } catch (error) {
@@ -49,7 +49,7 @@ export default function PackDetails() {
     };
 
     fetchCardPack();
-    
+
     const fromCheckout = new URLSearchParams(window.location.search).get("fromCheckout");
     if (fromCheckout === "true") {
       setShowModal(true);
@@ -61,14 +61,20 @@ export default function PackDetails() {
   };
 
   const redirectToCheckout = () => {
-    navigate("/checkout", {
-      state: {
-        cardPack: {
-          ...cardPack,
-          _id: id
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login-signup");
+    }
+    else {
+      navigate("/checkout", {
+        state: {
+          cardPack: {
+            ...cardPack,
+            _id: id
+          }
         }
-      }
-    });
+      });
+    }
   };
 
   if (loading) {
@@ -162,9 +168,9 @@ export default function PackDetails() {
                       className="card-container bg-gray-100 p-4 rounded-xl shadow-lg"
                     >
                       <div className="card-flip">
-                        <img 
-                          src={card.imageUrl || SingleCardImage} 
-                          alt={card.name || `Card ${card._id}`} 
+                        <img
+                          src={card.imageUrl || SingleCardImage}
+                          alt={card.name || `Card ${card._id}`}
                           className="w-40 h-48 object-contain"
                         />
                       </div>
@@ -186,9 +192,9 @@ export default function PackDetails() {
                         className="card-container bg-gray-100 p-4 rounded-xl shadow-lg"
                       >
                         <div className="card-flip">
-                          <img 
-                            src={card.imageUrl || SingleCardImage} 
-                            alt={card.name || `Card ${card._id}`} 
+                          <img
+                            src={card.imageUrl || SingleCardImage}
+                            alt={card.name || `Card ${card._id}`}
                             className="w-full h-32 object-contain"
                           />
                         </div>

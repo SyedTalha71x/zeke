@@ -9,35 +9,55 @@ export default async function createPaymentIntent(req, res) {
   }
 
   try {
-    const userId = req.user?.userId
-    if(!userId) {
+    const userId = req.user?.userId;
+    if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const { amount, paymentMethodType = 'card', cardPackId } = req.body;
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    let paymentMethodTypes = ['card'];
+    if (paymentMethodType === 'apple_pay') {
+      paymentMethodTypes = ['card', 'apple_pay'];
+    } else if (paymentMethodType === 'us_bank_account') {
+      paymentMethodTypes = ['us_bank_account'];
+    }
+
+    const paymentIntentParams = {
       amount: Math.round(amount * 100),
       currency: 'usd',
-      payment_method_types: [paymentMethodType],
+      payment_method_types: paymentMethodTypes,
       metadata: {
         userId,
         cardPackId,
       },
-    });
+    };
+
+    // For ACH payments, we need to add additional parameters
+    if (paymentMethodType === 'us_bank_account') {
+      paymentIntentParams.payment_method_options = {
+        us_bank_account: {
+          verification_method: 'instant',
+        },
+      };
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
 
     const savePurchase = new CardPurchase({
-        userId: userId,
-        cardPackId:  cardPackId,
+      userId: userId,
+      cardPackId: cardPackId,
       amount: paymentIntent.amount / 100,
       paymentIntentId: paymentIntent.id,
       status: paymentIntent.status,
+      paymentMethod: paymentMethodType,
     });
 
     await savePurchase.save();
 
     res.status(200).json({
       clientSecret: paymentIntent.client_secret,
+      paymentMethodTypes: paymentMethodTypes,
       recordSave: savePurchase
     });
   } catch (err) {

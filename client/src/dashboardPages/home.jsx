@@ -42,7 +42,7 @@ const DashboardOverview = () => {
       increase: "+0%",
     },
     {
-      title: "Avg. Price",
+      title: "Total Revenue",
       value: "$0",
       icon: <DollarOutlined />,
       color: "bg-orange-500",
@@ -358,14 +358,14 @@ const DashboardOverview = () => {
             },
             {
               title: "Total Sales",
-              value: "0",
+              value: data.data.totalSales.toString(),
               icon: <ShoppingCartOutlined />,
               color: "bg-purple-500",
               increase: "+0%",
             },
             {
-              title: "Avg. Price",
-              value: "$0",
+              title: "Total Revenue",
+              value: data.data.totalRevenue.toString(),
               icon: <DollarOutlined />,
               color: "bg-orange-500",
               increase: "+0%",

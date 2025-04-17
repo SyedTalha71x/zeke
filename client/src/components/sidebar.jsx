@@ -8,6 +8,9 @@ const Sidebar = () => {
   const handleLogout = () => {
     localStorage.removeItem("authToken"); 
     navigate("/login-signup"); 
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
   };
 
   const links = [

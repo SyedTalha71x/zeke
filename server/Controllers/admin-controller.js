@@ -1,3 +1,4 @@
+import CardPurchase from "../Models/card-purchase-model.js";
 import CardPack from "../Models/cardpack-model.js";
 import Contact from "../Models/contact-model.js";
 import User from "../Models/user-model.js";
@@ -25,12 +26,20 @@ export const getAnalytics = async (req, res) => {
     const totalUsers = await User.countDocuments();
     const totalCardPacks = await CardPack.countDocuments();
 
+    const successfulPurchases = await CardPurchase.find({ status: 'succeeded' });
+
+    const totalSales = successfulPurchases.length;
+
+    const totalRevenue = successfulPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+
     res.status(200).json({
       success: true,
       data: {
         totalUsers,
         totalCardPacks,
-      }
+        totalSales,
+        totalRevenue,
+      },
     });
   } catch (error) {
     console.error('Analytics Error:', error);
@@ -52,7 +61,9 @@ export const getNotifications = async (req, res) =>{
 }
 
 export const markNotificationAsRead = async (req, res) => {
+
   try {
+
     const { id } = req.params;
 
     const notification = await Contact.findByIdAndUpdate(id, { isRead: 1 }, { new: true });
@@ -66,3 +77,4 @@ export const markNotificationAsRead = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+

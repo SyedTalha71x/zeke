@@ -1,10 +1,17 @@
 /* eslint-disable react/prop-types */
-/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements, PaymentRequestButtonElement } from '@stripe/react-stripe-js';import { useLocation, useNavigate } from "react-router-dom";
+import { 
+  Elements, 
+  CardElement, 
+  useStripe, 
+  useElements, 
+  PaymentRequestButtonElement
+} from '@stripe/react-stripe-js';
+import { useLocation, useNavigate } from "react-router-dom";
 import { BASE_URL } from "../utils/api";
+
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const CheckoutForm = ({ amount, email, onSuccess, cardPack }) => {
@@ -16,17 +23,22 @@ const CheckoutForm = ({ amount, email, onSuccess, cardPack }) => {
   const [error, setError] = useState(null);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const token = localStorage.getItem('authToken')
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [bankDetails, setBankDetails] = useState({
+    accountHolderName: '',
+    accountType: 'checking',
+  });
+  const token = localStorage.getItem('authToken');
 
   useEffect(() => {
-    if (!stripe) return;
+    if (!stripe || paymentMethod !== 'apple_pay') return;
 
     const pr = stripe.paymentRequest({
       country: 'US',
       currency: 'usd',
       total: {
         label: 'Total',
-        amount: Math.round(amount * 100), // amount in cents
+        amount: Math.round(amount * 100),
       },
       requestPayerName: true,
       requestPayerEmail: true,
@@ -39,32 +51,29 @@ const CheckoutForm = ({ amount, email, onSuccess, cardPack }) => {
 
     pr.on('paymentmethod', async (ev) => {
       setLoading(true);
-      
       try {
-      
         const response = await fetch(`${BASE_URL}/create-payment-intent`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}` 
+          },
           body: JSON.stringify({ 
             amount, 
             cardPackId: cardPack?._id,
-            paymentMethodType: 'card',
-            metadata: {
-              productName: 'Card Pack',
-              customerEmail: email
-            }
+            paymentMethodType: 'apple_pay',
           }),
         });
 
         const { clientSecret } = await response.json();
 
-        // Confirm the PaymentIntent
-        const { error: confirmError } = await stripe.confirmCardPayment(
+        const { error: confirmError } = await stripe.confirmPayment({
           clientSecret,
-          { payment_method: ev.paymentMethod.id },
-          { handleActions: false }
-        );
+          paymentMethod: ev.paymentMethod.id,
+          confirmParams: {
+            return_url: window.location.origin + `/card-details/${cardPack?._id}?fromCheckout=true`,
+          },
+        });
 
         if (confirmError) {
           ev.complete('fail');
@@ -83,7 +92,7 @@ const CheckoutForm = ({ amount, email, onSuccess, cardPack }) => {
     });
 
     setPaymentRequest(pr);
-  }, [stripe, amount, email]);
+  }, [stripe, amount, paymentMethod]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -97,37 +106,47 @@ const CheckoutForm = ({ amount, email, onSuccess, cardPack }) => {
     try {
       const response = await fetch(`${BASE_URL}/create-payment-intent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' , 'Authorization': `Bearer ${token}`},
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ 
           amount, 
           cardPackId: cardPack?._id,
-          paymentMethodType: 'card',
-          metadata: {
-            productName: 'Card Pack',
-            customerEmail: email,
-            customerName: name,
-            shippingAddress: address
-          }
+          paymentMethodType: paymentMethod === 'bank_transfer' ? 'us_bank_account' : paymentMethod,
         }),
       });
 
       const { clientSecret } = await response.json();
 
-      const { error: paymentError } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: name,
-            email: email,
-            address: {
-              line1: address
-            }
+      let result;
+      if (paymentMethod === 'card') {
+        result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: name,
+              email: email,
+              address: {
+                line1: address
+              }
+            },
           },
-        },
-      });
+        });
+      } else if (paymentMethod === 'bank_transfer') {
+        result = await stripe.confirmUsBankAccountPayment(clientSecret, {
+          payment_method: {
+            us_bank_account: elements.getElement('us_bank_account'),
+            billing_details: {
+              name: bankDetails.accountHolderName,
+              email: email,
+            },
+          },
+        });
+      }
 
-      if (paymentError) {
-        setError(paymentError.message);
+      if (result.error) {
+        setError(result.error.message);
         setLoading(false);
         return;
       }
@@ -139,84 +158,155 @@ const CheckoutForm = ({ amount, email, onSuccess, cardPack }) => {
     }
   };
 
+  const renderPaymentMethodForm = () => {
+    switch (paymentMethod) {
+      case 'card':
+        return (
+          <>
+            <div>
+              <label htmlFor="name" className="text-gray-900 text-sm font-semibold">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full px-4 py-3 mt-2 text-sm bg-[#E3E3E380] rounded-3xl outline-none"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="address" className="text-gray-900 text-sm font-semibold">
+                Shipping Address
+              </label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                className="w-full px-4 py-3 mt-2 text-sm bg-[#E3E3E380] rounded-3xl outline-none"
+              />
+            </div>
+
+            <div className="border rounded-xl p-4 bg-[#E3E3E3]">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
+                      padding: '10px 12px',
+                    },
+                    invalid: {
+                      color: '#9e2146',
+                    },
+                  },
+                  hidePostalCode: true
+                }}
+              />
+            </div>
+          </>
+        );
+      case 'apple_pay':
+        return (
+          <div className="border rounded-xl p-4 bg-[#E3E3E3]">
+            {canMakePayment ? (
+              <PaymentRequestButtonElement
+                options={{
+                  paymentRequest,
+                  style: {
+                    paymentRequestButton: {
+                      type: 'buy',
+                      theme: 'dark',
+                      height: '48px'
+                    }
+                  }
+                }}
+              />
+            ) : (
+              <p className="text-center">Apple Pay is not available on this device/browser.</p>
+            )}
+          </div>
+        );
+      case 'bank_transfer':
+        return (
+          <>
+            <div>
+              <label htmlFor="accountHolderName" className="text-gray-900 text-sm font-semibold">
+                Account Holder Name
+              </label>
+              <input
+                type="text"
+                id="accountHolderName"
+                name="accountHolderName"
+                value={bankDetails.accountHolderName}
+                onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
+                required
+                className="w-full px-4 py-3 mt-2 text-sm bg-[#E3E3E380] rounded-3xl outline-none"
+              />
+            </div>
+
+            <div className="border rounded-xl p-4 bg-[#E3E3E3]">
+              <div id="us_bank_account_element">
+                {/* Stripe's US Bank Account element will be injected here */}
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-500 mt-2">
+              <p>By providing your bank account details, you authorize payments via ACH transfer.</p>
+              <p>Transactions may take 2-3 business days to complete.</p>
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && <div className="text-red-500 text-sm p-2 bg-red-50 rounded-md">{error}</div>}
       
-      <div>
-        <label htmlFor="name" className="text-gray-900 text-sm font-semibold">
-          Full Name
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="w-full px-4 py-3 mt-2 text-sm bg-[#E3E3E380] rounded-3xl outline-none"
-        />
+      <div className="flex gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setPaymentMethod('card')}
+          className={`flex-1 py-2 rounded-lg text-sm ${paymentMethod === 'card' ? 'bg-[#2F456C] text-white' : 'bg-gray-200'}`}
+        >
+          Credit Card
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaymentMethod('apple_pay')}
+          className={`flex-1 py-2 rounded-lg text-sm ${paymentMethod === 'apple_pay' ? 'bg-[#2F456C] text-white' : 'bg-gray-200'}`}
+        >
+          Apple Pay
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaymentMethod('bank_transfer')}
+          className={`flex-1 py-2 rounded-lg text-sm ${paymentMethod === 'bank_transfer' ? 'bg-[#2F456C] text-white' : 'bg-gray-200'}`}
+        >
+          Bank Transfer
+        </button>
       </div>
 
-      <div>
-        <label htmlFor="address" className="text-gray-900 text-sm font-semibold">
-          Shipping Address
-        </label>
-        <input
-          type="text"
-          id="address"
-          name="address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-          className="w-full px-4 py-3 mt-2 text-sm bg-[#E3E3E380] rounded-3xl outline-none"
-        />
-      </div>
-
-      {canMakePayment && (
-        <div className="border rounded-xl p-4 bg-[#E3E3E3]">
-          <PaymentRequestButtonElement 
-            options={{ 
-              paymentRequest,
-              style: {
-                paymentRequestButton: {
-                  type: 'buy',
-                  theme: 'dark',
-                  height: '48px'
-                }
-              }
-            }} 
-          />
-        </div>
-      )}
-
-      <div className="border rounded-xl p-4 bg-[#E3E3E3]">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
-                },
-                padding: '10px 12px',
-              },
-              invalid: {
-                color: '#9e2146',
-              },
-            },
-            hidePostalCode: true
-          }}
-        />
-      </div>
+      {renderPaymentMethodForm()}
 
       <button
         type="submit"
         disabled={!stripe || loading}
         className="w-full bg-[#2F456C] rounded-3xl text-white py-3 cursor-pointer text-sm font-medium hover:bg-[#1a2156] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'import.metaing...' : `Confirm Purchase of $${amount.toFixed(2)}`}
+        {loading ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
       </button>
     </form>
   );
@@ -269,7 +359,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Payment Successful!</h1>
-          <p>Your order has been import.metaed successfully.</p>
+          <p>Your order has been processed successfully.</p>
         </div>
       </div>
     );

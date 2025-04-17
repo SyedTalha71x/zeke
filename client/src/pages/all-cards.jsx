@@ -78,11 +78,14 @@ function AllCardsPage() {
                   {card.cardsAvailable} cards available
                 </div>
               </div>
+              <div className="card-flip-wrapper">
+
               <img
-                src={CardsImage}
+                src={card.imageUrl || CardsImage}
                 alt="Sports cards pack"
-                className="object-contain p-4 mix-blend-darken w-full h-48"
-              />
+                className="object-contain p-4 mix-blend-darken card-flip w-full h-48"
+                />
+                </div>
             </div>
 
             <div className="flex items-center gap-1 mb-2">
