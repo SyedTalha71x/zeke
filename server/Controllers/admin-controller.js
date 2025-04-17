@@ -50,3 +50,19 @@ export const getNotifications = async (req, res) =>{
     res.status(500).json({message: 'Internal Server Error'});
   }
 }
+
+export const markNotificationAsRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const notification = await Contact.findByIdAndUpdate(id, { isRead: 1 }, { new: true });
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    res.status(200).json({ message: 'Marked as read', data: notification });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};

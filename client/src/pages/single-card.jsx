@@ -5,10 +5,11 @@ import SingleCardImage from "../../public/single-card-image.svg";
 import GiftRapped from "../../public/noto_wrapped-gift.svg";
 import PackDetailCard from "../../public/PACK DETAILS.svg";
 import { BASE_URL } from "../utils/api";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 export default function PackDetails() {
-  const {id} = useParams();
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [cardPack, setCardPack] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,11 +57,18 @@ export default function PackDetails() {
   }, [id]);
 
   const handleBackToHome = () => {
-    window.location.href = "/";
+    navigate("/");
   };
 
-  const redirect = () => {
-    window.location.href = "/add-payment-method";
+  const redirectToCheckout = () => {
+    navigate("/checkout", {
+      state: {
+        cardPack: {
+          ...cardPack,
+          _id: id
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -134,7 +142,7 @@ export default function PackDetails() {
               <div className="flex flex-col sm:flex-row items-center gap-4 mt-5 lg:mt-0">
                 <span className="text-2xl hero_h1">${cardPack?.price?.toFixed(2) || "200.00"}</span>
                 <button
-                  onClick={redirect}
+                  onClick={redirectToCheckout}
                   className="bg-[#2B3B5C] text-white lg:px-8 px-6 py-2 text-sm rounded-3xl hover:bg-[#374b73] transition-colors"
                 >
                   Buy Now

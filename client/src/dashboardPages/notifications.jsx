@@ -21,27 +21,51 @@ export default function NotificationsPage() {
   const [filterType, setFilterType] = useState("all")
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`${BASE_URL}/get-notifications`)
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        setNotifications(data)
-      } catch (err) {
-        setError(err.message)
-        antMessage.error('Failed to fetch notifications: ' + err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchNotifications()
   }, [])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`${BASE_URL}/get-notifications`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      setNotifications(data)
+    } catch (err) {
+      setError(err.message)
+      antMessage.error('Failed to fetch notifications: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const markAsRead = async (id) => {
+    try {
+      const response = await fetch(`${BASE_URL}/mark-notification-as-read/${id}`, {
+        method: 'post'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+       await response.json()
+      
+      setNotifications(prevNotifications => 
+        prevNotifications.map(notification => 
+          notification._id === id ? { ...notification, isRead: 1 } : notification
+        )
+      )
+      
+      antMessage.success('Notification marked as read')
+    } catch (err) {
+      antMessage.error('Failed to mark notification as read: ' + err.message)
+    }
+  }
 
   const getInitials = (firstName, lastName) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
@@ -57,6 +81,16 @@ export default function NotificationsPage() {
         notification.email?.toLowerCase().includes(searchText.toLowerCase()) ||
         notification.message?.toLowerCase().includes(searchText.toLowerCase())
       )
+    })
+    .filter((notification) => {
+      if (filterType === "all") return true
+      if (filterType === "recent") {
+        return dayjs(notification.createdAt).isAfter(dayjs().subtract(1, 'day'))
+      }
+      if (filterType === "older") {
+        return dayjs(notification.createdAt).isBefore(dayjs().subtract(1, 'day'))
+      }
+      return true
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
@@ -82,7 +116,10 @@ export default function NotificationsPage() {
         <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 24 }}>
           <Col xs={24} md={12}>
             <Title level={3} style={{ margin: 0 }}>
-              <Badge count={notifications.length} style={{ backgroundColor: "#52c41a" }}>
+              <Badge 
+                count={notifications.filter(n => !n.isRead).length} 
+                style={{ backgroundColor: "#faad14" }}
+              >
                 <span style={{ marginRight: 10 }}>User Feedback</span>
               </Badge>
             </Title>
@@ -110,6 +147,7 @@ export default function NotificationsPage() {
                   <Option value="all">All Messages</Option>
                   <Option value="recent">Recent (24h)</Option>
                   <Option value="older">Older</Option>
+                  <Option value="unread">Unread</Option>
                 </Select>
               </Col>
             </Row>
@@ -124,11 +162,12 @@ export default function NotificationsPage() {
             <List.Item
               key={item._id}
               style={{
-                background: "#fff",
+                background: item.isRead ? "#fafafa" : "#fff",
                 marginBottom: 16,
                 padding: 16,
                 borderRadius: 8,
                 boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+                borderLeft: item.isRead ? "none" : "3px solid #1890ff",
               }}
             >
               <List.Item.Meta
@@ -136,7 +175,7 @@ export default function NotificationsPage() {
                   <Avatar
                     size={48}
                     style={{
-                      backgroundColor: "#1890ff",
+                      backgroundColor: item.isRead ? "#d9d9d9" : "#1890ff",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
@@ -148,7 +187,8 @@ export default function NotificationsPage() {
                 title={
                   <Space size={16} style={{ display: "flex", alignItems: "center" }}>
                     <Text strong style={{ fontSize: 16 }}>{`${item.firstName} ${item.lastName}`}</Text>
-                    <Tag color="blue">{dayjs(item.createdAt).fromNow()}</Tag>
+                    <Tag color={item.isRead ? "default" : "blue"}>{dayjs(item.createdAt).fromNow()}</Tag>
+                    {item.isRead ? null : <Tag color="orange">Unread</Tag>}
                   </Space>
                 }
                 description={
@@ -172,13 +212,15 @@ export default function NotificationsPage() {
               </div>
               <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
                 <Space>
-                  <Button type="primary" size="small">
-                    Reply
-                  </Button>
-                  <Button size="small">Mark as Read</Button>
-                  <Button type="text" danger size="small">
-                    Delete
-                  </Button>
+                  {!item.isRead && (
+                    <Button 
+                      size="small" 
+                      onClick={() => markAsRead(item._id)}
+                      loading={loading}
+                    >
+                      Mark as Read
+                    </Button>
+                  )}
                 </Space>
               </div>
             </List.Item>

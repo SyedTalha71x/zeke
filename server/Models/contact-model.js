@@ -24,6 +24,10 @@ const contactSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  isRead:{
+    type: Number,
+    default: 0,
+  }
 });
 
 const Contact = mongoose.models.Contact || mongoose.model('Contact', contactSchema);
