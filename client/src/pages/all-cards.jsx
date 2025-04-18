@@ -18,7 +18,7 @@ function AllCardsPage() {
     const fetchCardsData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${BASE_URL}/get-all-cards`);
+        const response = await axios.get(`${BASE_URL}/get-all-card-pack`);
         const data = response.data;
         setCardsData(data);
         setTotalPages(Math.ceil(data.length / cardsPerPage));

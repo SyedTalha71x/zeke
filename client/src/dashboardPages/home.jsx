@@ -484,7 +484,7 @@ const DashboardOverview = () => {
       </div>
 
       {/* Cards Table */}
-      <div className="bg-[#FFFFFF] rounded-xl shadow-md p-6">
+      {/* <div className="bg-[#FFFFFF] rounded-xl shadow-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Trading Cards Inventory</h2>
         </div>
@@ -503,7 +503,7 @@ const DashboardOverview = () => {
           className="cards-table"
           rowClassName="transition-all hover:bg-gray-50"
         />
-      </div>
+      </div> */}
     </div>
   );
 };

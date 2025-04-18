@@ -1,54 +1,47 @@
-/* eslint-disable react/no-unknown-property */
 /* eslint-disable no-unused-vars */
+/* eslint-disable react/no-unknown-property */
 import React, { useEffect, useState } from "react";
 import SingleCardImage from "../../public/single-card-image.svg";
 import GiftRapped from "../../public/noto_wrapped-gift.svg";
 import PackDetailCard from "../../public/PACK DETAILS.svg";
 import { BASE_URL } from "../utils/api";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function PackDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [cardPack, setCardPack] = useState(null);
+  const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchCardPack = async () => {
+    const fetchCardPackData = async () => {
       try {
         if (!id) {
           throw new Error("No pack ID provided");
         }
 
-        const response = await fetch(`${BASE_URL}/get-single-card/${id}`);
+        // Fetch card pack details
+        const packResponse = await axios.get(`${BASE_URL}/get-single-card-pack/${id}`);
+        const packData = packResponse.data;
+        setCardPack(packData);
 
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
+        // Fetch cards for this pack
+        const cardsResponse = await axios.get(`${BASE_URL}/get-cards-by-pack/${id}`);
+        setCards(cardsResponse.data);
 
-        const data = await response.json();
-
-        // Add hardcoded tier property to each card
-        if (data.cards && data.cards.length > 0) {
-          // Assign first 3 cards as tier 1, rest as tier 2
-          data.cards = data.cards.map((card, index) => ({
-            ...card,
-            tier: index < 3 ? 1 : 2
-          }));
-        }
-
-        setCardPack(data);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching card pack:", error);
+        console.error("Error fetching card pack data:", error);
         setError(error.message);
         setLoading(false);
       }
     };
 
-    fetchCardPack();
+    fetchCardPackData();
 
     const fromCheckout = new URLSearchParams(window.location.search).get("fromCheckout");
     if (fromCheckout === "true") {
@@ -64,8 +57,7 @@ export default function PackDetails() {
     const token = localStorage.getItem("authToken");
     if (!token) {
       navigate("/login-signup");
-    }
-    else {
+    } else {
       navigate("/checkout", {
         state: {
           cardPack: {
@@ -76,6 +68,10 @@ export default function PackDetails() {
       });
     }
   };
+
+  // Filter cards by tier
+  const tier1Cards = cards.filter(card => card.tier === 1);
+  const tier2Cards = cards.filter(card => card.tier === 2);
 
   if (loading) {
     return (
@@ -95,10 +91,6 @@ export default function PackDetails() {
       </div>
     );
   }
-
-  // Filter cards by tier
-  const tier1Cards = cardPack?.cards ? cardPack.cards.filter(card => card.tier === 1) : [];
-  const tier2Cards = cardPack?.cards ? cardPack.cards.filter(card => card.tier === 2) : [];
 
   return (
     <>

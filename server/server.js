@@ -4,6 +4,7 @@ import connectToDB from './Utils/db.js';
 import { configDotenv } from 'dotenv';
 import UserRoutes from './Routes/user-routes.js'
 import CardRoutes from './Routes/card-routes.js'
+import CardPackRoutes from './Routes/card-pack-routes.js'
 import ProfileRoutes from './Routes/profile-routes.js'
 import AdminRoutes from './Routes/admin-routes.js'
 import ContactRoutes from './Routes/contact-routes.js'
@@ -27,7 +28,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.use('/api', UserRoutes)
+
 app.use('/api', CardRoutes)
+app.use('/api', CardPackRoutes)
+
 app.use('/api', ProfileRoutes)
 app.use('/api', AdminRoutes)
 app.use('/api', ContactRoutes)

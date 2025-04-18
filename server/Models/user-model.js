@@ -21,6 +21,9 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  country:{type: String},
+  postalcode: {type: Number},
+  address: {type: String}
 });
 
 const User = mongoose.models.User ||  mongoose.model('User', userSchema);

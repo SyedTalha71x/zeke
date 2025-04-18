@@ -1,45 +1,52 @@
+import { get } from "mongoose";
+import Card from "../Models/card-model.js";
 import CardPack from "../Models/cardpack-model.js";
 import { cloudinary } from "../Utils/cloudinary.js";
 import fs from "fs";
 import path from "path";
 
-export const createCardPack = async (req, res) => {
+export const createCard = async (req, res) => {
   try {
-    const { name, description, boxCount, cardsAvailable, price, category, inStock } = req.body;
+    const { name, description, tier, rarity, cardPackId } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ 
         success: false,
-        message: "Image is required" 
+        message: "Card image is required" 
+      });
+    }
+
+    const cardPack = await CardPack.findById(cardPackId);
+    if (!cardPack) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Card pack not found" 
       });
     }
 
     const imageUrl = req.s3FileUrl || `/uploads/${req.file.filename}`;
 
-    const newCardPack = new CardPack({
+    const newCard = new Card({
       name,
       description,
-      boxCount: Number(boxCount),
-      cardsAvailable: Number(cardsAvailable),
-      price: Number(price),
-      imageUrl: imageUrl,
-      category,
-      inStock,
+      tier: Number(tier),
+      rarity,
+      imageUrl,
+      cardPack: cardPackId,
       s3ImageUrl: req.s3FileUrl,
       localImageUrl: `/uploads/${req.file.filename}`
     });
 
-    const savedCardPack = await newCardPack.save();
-    
+    const savedCard = await newCard.save();
+
     res.status(201).json({ 
       success: true,
-      message: "Card pack created successfully",
-      cardPack: savedCardPack 
+      message: "Card created successfully",
+      card: savedCard 
     });
     
   } catch (error) {
-    console.error("Create Card Pack Error:", error);
-
+    console.error("Create Card Error:", error);
     res.status(500).json({ 
       success: false,
       message: "Internal server error",
@@ -48,105 +55,112 @@ export const createCardPack = async (req, res) => {
   }
 };
 
-export const getAllCardPacks = async (req, res) => {
+export const getCardsByPack = async (req, res) => {
   try {
-    const cardPacks = await CardPack.find().sort({ createdAt: -1 });
-    res.status(200).json(cardPacks);
+    const { packId } = req.params;
+    
+    const cards = await Card.find({ cardPack: packId });
+    
+    res.status(200).json(cards);
   } catch (error) {
-    res.status(500).json({message: 'Internal Server Error'});
+    res.status(500).json({ 
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
 
-export const getCardPackById = async (req, res) => {
-  try {
-    const cardPack = await CardPack.findById(req.params.id);
-    if (!cardPack) {
-      return res.status(404).json({ message: "Card pack not found" });
-    }
-    res.status(200).json(cardPack);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+export const getAllCards = async (req,res) =>{
+  try{
+    const getAllCards = await Card.find().populate('cardPack');
+    return res.status(201).json(getAllCards)
   }
-};
+  catch(error){
+    console.log(error)
+    return ;
+    
+  }
+}
 
-export const updateCardPack = async (req, res) => {
+export const updateCard = async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      boxCount,
-      cardsAvailable,
-      price,
-      category,
-      inStock,
-    } = req.body;
+    const { name, description, tier, rarity } = req.body;
+    const { id } = req.params;
 
-    const cardPack = await CardPack.findById(req.params.id);
-    if (!cardPack) {
-      return res.status(404).json({ success: false, message: "Card pack not found" });
+    const card = await Card.findById(id);
+    if (!card) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Card not found" 
+      });
     }
 
-    const updatedCard = {};
-
-    if (name !== undefined) updatedCard.name = name;
-    if (description !== undefined) updatedCard.description = description;
-    if (boxCount !== undefined) updatedCard.boxCount = Number(boxCount);
-    if (cardsAvailable !== undefined) updatedCard.cardsAvailable = Number(cardsAvailable);
-    if (price !== undefined) updatedCard.price = Number(price);
-    if (category !== undefined) updatedCard.category = category;
-    if (typeof inStock !== "undefined") updatedCard.inStock = inStock;
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (tier !== undefined) updates.tier = Number(tier);
+    if (rarity !== undefined) updates.rarity = rarity;
 
     if (req.file) {
       // Optionally delete old local image
-      if (cardPack.localImageUrl) {
-        const oldLocalPath = path.join("uploads", path.basename(cardPack.localImageUrl));
+      if (card.localImageUrl) {
+        const oldLocalPath = path.join("uploads", path.basename(card.localImageUrl));
         if (fs.existsSync(oldLocalPath)) {
           fs.unlinkSync(oldLocalPath);
         }
       }
 
-      updatedCard.imageUrl = req.s3FileUrl || `/uploads/${req.file.filename}`;
-      updatedCard.s3ImageUrl = req.s3FileUrl;
-      updatedCard.localImageUrl = `/uploads/${req.file.filename}`;
+      updates.imageUrl = req.s3FileUrl || `/uploads/${req.file.filename}`;
+      updates.s3ImageUrl = req.s3FileUrl;
+      updates.localImageUrl = `/uploads/${req.file.filename}`;
     }
 
-    const updatedCardPack = await CardPack.findByIdAndUpdate(
-      req.params.id,
-      { $set: updatedCard },
+    const updatedCard = await Card.findByIdAndUpdate(
+      id,
+      { $set: updates },
       { new: true }
     );
 
     res.status(200).json({
       success: true,
-      message: "Card pack updated successfully",
-      cardPack: updatedCardPack,
+      message: "Card updated successfully",
+      card: updatedCard
     });
 
   } catch (error) {
-    console.error("Update Card Pack Error:", error);
-    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    console.error("Update Card Error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
 
-
-export const deleteCardPack = async (req, res) => {
+export const deleteCard = async (req, res) => {
   try {
-    const cardPack = await CardPack.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!cardPack) {
-      return res.status(404).json({ message: "Card pack not found" });
+    const card = await Card.findByIdAndDelete(id);
+    if (!card) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Card not found" 
+      });
     }
-
-    await CardPack.findByIdAndDelete(cardPack)
 
     res.status(200).json({
       success: true,
-      message: "Card pack deleted successfully",
+      message: "Card deleted successfully"
     });
+
   } catch (error) {
-    console.error("Delete Card Pack Error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Delete Card Error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
-
-
